@@ -27,6 +27,9 @@ export type HttpResponsePayload =
       sizeBytes: number;
       bodyText: string | null;
       bodyBase64: string | null;
+      /** True when the body was larger than the in-memory preview; the full body is in bodyFile. */
+      truncated: boolean;
+      bodyFile: string | null;
     }
   | {
       ok: false;
@@ -39,6 +42,8 @@ export type SaveFileOptions = {
   defaultName: string;
   content: string;
   encoding?: "utf8" | "base64";
+  /** Copy this response temp file instead of writing `content`. */
+  sourcePath?: string | null;
 };
 
 export type OpenFileOptions = {

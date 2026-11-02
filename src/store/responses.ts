@@ -23,6 +23,36 @@ export const useResponses = create<ResponseStore>()((set) => ({
   setState: (tabId, state) => set((store) => ({ byTab: { ...store.byTab, [tabId]: state } }))
 }));
 
+// Response bodies kept across all tabs. Older responses in background tabs are dropped beyond this,
+// so leaving many tabs open with large responses cannot push an 8 GB machine into swap.
+const RETAINED_BODY_BYTES = 64 * 1024 * 1024;
+const receivedOrder: string[] = [];
+
+function bodyBytes(state: ResponseState | undefined) {
+  if (state?.status !== "done") return 0;
+  // JavaScript strings are UTF-16, so text costs two bytes per character.
+  return (state.response.bodyText?.length ?? 0) * 2 + (state.response.bodyBase64?.length ?? 0) * 2;
+}
+
+function trimRetained(keepTabId: string) {
+  const index = receivedOrder.indexOf(keepTabId);
+  if (index >= 0) receivedOrder.splice(index, 1);
+  receivedOrder.push(keepTabId);
+  const { byTab, setState } = useResponses.getState();
+  let total = receivedOrder.reduce((sum, tabId) => sum + bodyBytes(byTab[tabId]), 0);
+  const visible = useWorkspace.getState().activeTabId;
+  for (let i = 0; total > RETAINED_BODY_BYTES && i < receivedOrder.length; ) {
+    const tabId = receivedOrder[i];
+    if (tabId === keepTabId || tabId === visible) {
+      i++;
+      continue;
+    }
+    receivedOrder.splice(i, 1);
+    total -= bodyBytes(byTab[tabId]);
+    setState(tabId, undefined);
+  }
+}
+
 export const useTabResponse = (tabId: string) => useResponses((store) => store.byTab[tabId]);
 
 export async function sendTab(tabId: string) {
@@ -53,6 +83,7 @@ export async function sendTab(tabId: string) {
   if (result.ok) {
     const { ok: _ok, ...response } = result;
     useResponses.getState().setState(tabId, { status: "done", response });
+    trimRetained(tabId);
     useWorkspace.getState().addHistory(tab.request, response.status, response.timeMs);
   } else if (result.cancelled) {
     useResponses.getState().setState(tabId, undefined);

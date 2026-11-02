@@ -16,6 +16,14 @@ Servers with self-signed, expired or mismatched certificates are rejected by def
 
 Press `Esc` or click **Cancel**. To give up automatically, set **Request timeout** in **Settings** (in milliseconds; `0` waits indefinitely).
 
+## A large response says "Showing the first 16 MB"
+
+To keep memory use low on 8 GB machines, Getman displays at most 16 MB of a response. Click **Save full response** to write the complete body to a file.
+
+## A response disappeared from a background tab
+
+Getman keeps up to 64 MB of responses across all tabs. When you have several large responses open, the oldest ones in background tabs are cleared; send the request again to see it.
+
 ## A redirect is followed when I want to see it
 
 Turn off **Follow redirects** in **Settings** to see the `3xx` response and its `Location` header.

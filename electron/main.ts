@@ -1,9 +1,10 @@
-import { BrowserWindow, Menu, app, dialog, ipcMain, shell, type MenuItemConstructorOptions } from "electron";
+import { BrowserWindow, Menu, app, dialog, ipcMain, net, protocol, shell, type MenuItemConstructorOptions } from "electron";
 import { existsSync, readFileSync } from "node:fs";
 import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import type { HttpRequestPayload, MenuCommand, OpenFileOptions, SaveFileOptions } from "../src/shared/ipc";
-import { cancelHttpRequest, executeHttpRequest } from "./http";
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 const isMac = process.platform === "darwin";
@@ -11,6 +12,15 @@ const isMac = process.platform === "darwin";
 app.setName("Getman");
 // Lets development and test runs use a throwaway profile instead of the real workspace.
 if (process.env.GETMAN_USER_DATA) app.setPath("userData", process.env.GETMAN_USER_DATA);
+
+// The UI is served from app://getman instead of file:// so Chromium keeps a V8 code cache for it:
+// after the first launch the bundle is not re-compiled, which matters most on slow CPUs.
+protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { standard: true, secure: true, supportFetchAPI: true, codeCache: true } }]);
+const distDir = path.join(__dirname, "../dist");
+
+// The HTTP engine (undici) is only loaded when the first request is sent, keeping startup lean.
+let httpEngine: typeof import("./http") | null = null;
+const http = () => (httpEngine ??= require("./http.cjs") as typeof import("./http"));
 
 const workspaceFile = () => path.join(app.getPath("userData"), "workspace.json");
 // Workspaces written by the old Tauri build live under the bundle identifier.
@@ -82,8 +92,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      spellcheck: false,
-      backgroundThrottling: false
+      spellcheck: false
     }
   });
 
@@ -104,7 +113,7 @@ function createWindow() {
   if (isDev) {
     void mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL!);
   } else {
-    void mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+    void mainWindow.loadURL("app://getman/index.html");
   }
 }
 
@@ -173,14 +182,19 @@ function registerIpc() {
     });
   });
 
-  ipcMain.handle("http:send", (_event, id: string, payload: HttpRequestPayload) => executeHttpRequest(id, payload));
-  ipcMain.on("http:cancel", (_event, id: string) => cancelHttpRequest(id));
+  ipcMain.handle("http:send", (_event, id: string, payload: HttpRequestPayload) => http().executeHttpRequest(id, payload));
+  ipcMain.on("http:cancel", (_event, id: string) => httpEngine?.cancelHttpRequest(id));
 
   ipcMain.handle("file:save", async (_event, options: SaveFileOptions) => {
     if (!mainWindow) return false;
     const result = await dialog.showSaveDialog(mainWindow, { defaultPath: options.defaultName });
     if (result.canceled || !result.filePath) return false;
-    await writeFile(result.filePath, Buffer.from(options.content, options.encoding ?? "utf8"));
+    const source = options.sourcePath ? path.resolve(options.sourcePath) : null;
+    if (source && path.dirname(source) === path.resolve(tmpdir()) && path.basename(source).startsWith("getman-response-")) {
+      await copyFile(source, result.filePath);
+    } else {
+      await writeFile(result.filePath, Buffer.from(options.content, options.encoding ?? "utf8"));
+    }
     return true;
   });
 
@@ -213,6 +227,11 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(() => {
     // Packaged builds take the icon from the app bundle; in development replace the stock Electron icon.
     if (isDev && isMac) app.dock?.setIcon(path.join(__dirname, "../build/icon-macos.png"));
+    protocol.handle("app", (request) => {
+      const file = path.normalize(path.join(distDir, decodeURIComponent(new URL(request.url).pathname)));
+      if (!file.startsWith(distDir + path.sep)) return new Response("Not found", { status: 404 });
+      return net.fetch(pathToFileURL(file).toString());
+    });
     registerIpc();
     buildMenu();
     createWindow();
@@ -220,6 +239,8 @@ if (!app.requestSingleInstanceLock()) {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
   });
+
+  app.on("will-quit", () => httpEngine?.removeResponseFiles());
 
   app.on("window-all-closed", () => {
     if (!isMac) app.quit();

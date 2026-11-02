@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseCurl } from "./curl";
+import { formatJson, prettyJsonText } from "./format";
 import { createRequest, createRow } from "./factory";
 import { normalizeWorkspace } from "./migrate";
 import { exportCollection, importCollection } from "./postman";
@@ -174,5 +175,27 @@ describe("postman", () => {
   it("rejects unrelated JSON", () => {
     expect(() => importCollection('{"hello": 1}')).toThrow();
     expect(() => importCollection("not json")).toThrow(/valid JSON/);
+  });
+});
+
+describe("formatJson", () => {
+  it("matches JSON.stringify output for ordinary documents", () => {
+    const value = { a: 1, b: [1, 2, { c: "x" }], d: {}, e: [], f: null, g: 'q"uote {[,:]} back\\slash' };
+    expect(formatJson(JSON.stringify(value))).toBe(JSON.stringify(value, null, 2));
+    expect(formatJson(JSON.stringify(value, null, 4))).toBe(JSON.stringify(value, null, 2));
+  });
+
+  it("keeps large integers exactly as sent", () => {
+    expect(formatJson('{"id":9007199254740993}')).toBe('{\n  "id": 9007199254740993\n}');
+  });
+
+  it("only uses the precision-safe path when it matters", () => {
+    expect(prettyJsonText('{"id":9007199254740993}')).toContain("9007199254740993");
+    expect(prettyJsonText('{"a":[1,2')).toBe('{\n  "a": [\n    1,\n    2');
+    expect(prettyJsonText('{"a":1}')).toBe('{\n  "a": 1\n}');
+  });
+
+  it("does not throw on a document cut off midway", () => {
+    expect(formatJson('{"a":[1,2,{"b":"tex')).toBe('{\n  "a": [\n    1,\n    2,\n    {\n      "b": "tex');
   });
 });

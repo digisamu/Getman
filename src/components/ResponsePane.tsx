@@ -1,13 +1,14 @@
 import { AlertTriangle, Copy, Download, WrapText } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { bridge, isMac } from "../lib/bridge";
-import { formatBytes, formatDuration, prettyJson, statusTone } from "../lib/format";
+import { formatBytes, formatDuration, formatJson, looksLikeJson, prettyJsonText, statusTone } from "../lib/format";
 import { cancelTab, useTabResponse } from "../store/responses";
 import { copyText, useUi } from "../store/ui";
 import type { ResponseRecord } from "../types/api";
 import { CodeEditor, type EditorLanguage } from "./CodeEditor";
 
-const PRETTY_LIMIT = 8 * 1024 * 1024;
+// Above this size Raw view uses a native text area, which handles multi-megabyte lines far better.
+const NATIVE_RAW_LIMIT = 1024 * 1024;
 
 function editorLanguage(contentType: string): EditorLanguage {
   const type = contentType.toLowerCase();
@@ -31,7 +32,8 @@ function fileExtension(contentType: string) {
   return type.startsWith("text/") ? "txt" : "bin";
 }
 
-export function ResponsePane({ tabId }: { tabId: string }) {
+// Memoised: the response does not change while the request above it is being edited.
+export const ResponsePane = memo(function ResponsePane({ tabId }: { tabId: string }) {
   const state = useTabResponse(tabId);
 
   if (!state) return <EmptyResponse />;
@@ -50,7 +52,7 @@ export function ResponsePane({ tabId }: { tabId: string }) {
     );
   }
   return <ResponseView key={tabId} response={state.response} />;
-}
+});
 
 function EmptyResponse() {
   const mod = isMac ? "⌘" : "Ctrl";
@@ -106,9 +108,18 @@ function ResponseView({ response }: { response: ResponseRecord }) {
 
   const language = editorLanguage(type);
   const pretty = useMemo(() => {
-    if (response.bodyText === null) return null;
-    if (response.bodyText.length > PRETTY_LIMIT) return response.bodyText;
-    return (language === "json" || language === "text" ? prettyJson(response.bodyText) : null) ?? response.bodyText;
+    const text = response.bodyText;
+    if (text === null) return null;
+    if (language === "json") return prettyJsonText(text);
+    if (language === "text" && text.length < 1024 * 1024 && looksLikeJson(text)) {
+      try {
+        JSON.parse(text);
+        return formatJson(text);
+      } catch {
+        return text;
+      }
+    }
+    return text;
   }, [response.bodyText, language]);
   const detectedLanguage: EditorLanguage = language === "text" && pretty !== response.bodyText ? "json" : language;
   const tone = statusTone(response.status);
@@ -117,8 +128,9 @@ function ResponseView({ response }: { response: ResponseRecord }) {
     const name = (new URL(response.url).pathname.split("/").filter(Boolean).pop() ?? "response").replace(/\.[a-z0-9]+$/i, "") || "response";
     const saved = await bridge.saveFile({
       defaultName: `${name}.${fileExtension(type)}`,
-      content: response.bodyBase64 ?? response.bodyText ?? "",
-      encoding: response.bodyBase64 ? "base64" : "utf8"
+      content: response.bodyFile ? "" : response.bodyBase64 ?? response.bodyText ?? "",
+      encoding: response.bodyBase64 ? "base64" : "utf8",
+      sourcePath: response.bodyFile
     });
     if (saved) useUi.getState().toast("Response saved");
   }
@@ -174,6 +186,14 @@ function ResponseView({ response }: { response: ResponseRecord }) {
               </button>
             </div>
           </div>
+          {response.truncated && response.bodyText !== null && (
+            <div className="mx-4 mb-2 flex items-center justify-between gap-3 rounded border border-line bg-hover px-3 py-1.5 text-xs text-muted">
+              <span>Showing the first 16 MB of {formatBytes(response.sizeBytes)} to keep memory use low.</span>
+              <button className="btn-ghost h-6 px-1.5 text-xs" onClick={save}>
+                Save full response
+              </button>
+            </div>
+          )}
           <div className="mx-4 mb-4 min-h-0 flex-1 overflow-hidden rounded border border-line bg-field">
             {response.bodyText === null && !isImage ? (
               <div className="grid h-full place-items-center p-6 text-center text-sm text-muted">
@@ -193,6 +213,14 @@ function ResponseView({ response }: { response: ResponseRecord }) {
               <iframe title="HTML preview" sandbox="" srcDoc={response.bodyText ?? ""} className="h-full w-full bg-white" />
             ) : response.sizeBytes === 0 || response.bodyText === "" ? (
               <div className="grid h-full place-items-center text-sm text-muted">The response has no body.</div>
+            ) : mode === "raw" && (response.bodyText?.length ?? 0) > NATIVE_RAW_LIMIT ? (
+              <textarea
+                readOnly
+                spellCheck={false}
+                wrap={wrap ? "soft" : "off"}
+                value={response.bodyText ?? ""}
+                className="h-full w-full resize-none bg-transparent p-3 font-mono text-[12.5px] leading-[1.6] outline-none"
+              />
             ) : (
               <CodeEditor value={mode === "pretty" ? pretty ?? "" : response.bodyText ?? ""} language={mode === "pretty" ? detectedLanguage : "text"} readOnly wrap={wrap} />
             )}

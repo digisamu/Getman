@@ -1,7 +1,7 @@
 {
   "name": "getman",
   "productName": "Getman",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Offline-first desktop API client",
   "author": {
     "name": "Getman",
@@ -96,7 +96,8 @@
     "artifactName": "${productName}-${os}-${arch}.${ext}",
     "dmg": {
       "title": "Getman ${version}",
-      "artifactName": "${productName}-mac-${arch}.${ext}"
+      "artifactName": "${productName}-mac-${arch}.${ext}",
+      "format": "ULFO"
     },
     "nsis": {
       "oneClick": false,
@@ -112,7 +113,12 @@
     },
     "deb": {
       "artifactName": "${productName}-linux.${ext}"
-    }
+    },
+    "electronLanguages": [
+      "en",
+      "en-US",
+      "en-GB"
+    ]
   },
   "devDependencies": {
     "@codemirror/autocomplete": "^6.20.4",

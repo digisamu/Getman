@@ -5,7 +5,7 @@ import { cloneRequest } from "../lib/factory";
 import { dayLabel, relativeTime, statusTone } from "../lib/format";
 import { exportCollection, importCollection } from "../lib/postman";
 import { confirmAction, useUi } from "../store/ui";
-import { useActiveTab, useWorkspace } from "../store/workspace";
+import { useWorkspace } from "../store/workspace";
 import type { Collection, CollectionFolder, CollectionRequest, HistoryEntry } from "../types/api";
 import { MenuList, Popover, usePopover } from "./ui/Popover";
 
@@ -159,7 +159,8 @@ function TreeRow({
 
 function CollectionTree({ query }: { query: string }) {
   const collections = useWorkspace((state) => state.collections);
-  const activeSource = useActiveTab()?.source;
+  // Subscribe to the id only, so typing in the active request does not re-render the tree.
+  const activeRequestId = useWorkspace((state) => state.tabs.find((tab) => tab.id === state.activeTabId)?.source?.requestId);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<Editing>(null);
   const store = useWorkspace.getState;
@@ -207,7 +208,7 @@ function CollectionTree({ query }: { query: string }) {
       <TreeRow
         key={request.id}
         depth={2}
-        active={activeSource?.requestId === request.id}
+        active={activeRequestId === request.id}
         onClick={() => store().openRequest(source)}
         onDoubleClick={() => setEditing({ id: request.id, value: request.name, commit: (name) => store().renameRequest(source, name) })}
         menu={

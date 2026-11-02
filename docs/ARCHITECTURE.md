@@ -22,9 +22,16 @@ Getman is an Electron app with a React renderer. The renderer never touches the 
 
 - **Main** (`electron/main.ts`) creates a single hardened window (`contextIsolation`, `sandbox`, no Node integration, external links opened in the system browser), builds the native menu, and handles IPC: loading and saving the workspace, sending and cancelling requests, and file dialogs.
 - **Preload** (`electron/preload.ts`) exposes the `GetmanBridge` defined in `src/shared/ipc.ts`.
-- **Renderer** (`src/`) is a Vite + React 18 app. In production it is loaded from `dist/index.html` with a strict Content Security Policy.
+- **Renderer** (`src/`) is a Vite + React 18 app. In production it is served from `app://getman`, a privileged scheme with V8 code caching, so after the first launch its JavaScript is not re-compiled. It runs under a strict Content Security Policy.
 
-Main and preload are bundled with esbuild (`scripts/build-electron.mjs`), so the packaged app ships no `node_modules`.
+Main and preload are bundled with esbuild (`scripts/build-electron.mjs`), so the packaged app ships no `node_modules`. The HTTP engine is a separate bundle (`http.cjs`) that main loads on the first request.
+
+## Startup and performance
+
+- The first screen needs only ~240 KB of JavaScript. CodeMirror (`CodeEditorImpl.tsx`) is a separate chunk that is fetched once the app is idle, and every grammar except JSON is fetched the first time it is needed.
+- Components subscribe to the smallest slice of state they need; typing in a request does not re-render the sidebar or the response.
+- Autosave is debounced and serialised during idle time.
+- Hidden or minimised windows are throttled by Chromium, so the app uses almost no CPU in the background.
 
 ## HTTP
 
@@ -34,6 +41,8 @@ Main and preload are bundled with esbuild (`scripts/build-electron.mjs`), so the
 - total time and body size in bytes
 - the body as text, or as base64 for binary content (used for image preview and saving)
 
+At most 16 MB of a body is kept in memory and sent to the window. Larger bodies are streamed to a temp file (deleted on quit) so **Save full response** still writes everything.
+
 Network errors are translated into plain explanations (DNS failure, connection refused, certificate problems, timeouts).
 
 `src/lib/request.ts` turns an editable request into exactly what is sent: variables resolved, the scheme added when missing, auth headers applied, and a `Content-Type` added only when the user has not set one.
@@ -41,7 +50,7 @@ Network errors are translated into plain explanations (DNS failure, connection r
 ## State
 
 - `store/workspace.ts` holds everything that is persisted: tabs, collections, environments, history, settings and layout.
-- `store/responses.ts` keeps the last response per tab in memory only.
+- `store/responses.ts` keeps the last response per tab in memory only, up to 64 MB of bodies across all tabs; older responses in background tabs are dropped first.
 - `store/ui.ts` holds dialogs, toasts and panel visibility.
 
 Components subscribe to the smallest slice they need, so typing in one field does not re-render the rest of the app.

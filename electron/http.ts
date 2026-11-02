@@ -1,4 +1,9 @@
+import { randomUUID } from "node:crypto";
+import { unlinkSync } from "node:fs";
+import { open, unlink, type FileHandle } from "node:fs/promises";
 import { STATUS_CODES } from "node:http";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { Agent, FormData, Headers, fetch } from "undici";
 import type { HttpRequestPayload, HttpResponsePayload } from "../src/shared/ipc";
 
@@ -8,7 +13,12 @@ const insecureAgent = new Agent({ keepAliveTimeout: 30_000, connect: { timeout: 
 
 const BODYLESS = new Set(["GET", "HEAD"]);
 const TEXT_TYPES = /^(text\/|application\/(.+\+)?(json|xml|javascript|ecmascript|x-www-form-urlencoded|graphql|yaml|x-yaml|problem\+json))/i;
-const MAX_BINARY_PREVIEW = 25 * 1024 * 1024;
+// At most this much of a response is held in memory and sent to the window. Anything larger is
+// streamed to a temp file so it can still be saved in full without exhausting RAM on 8 GB machines.
+const PREVIEW_LIMIT = 16 * 1024 * 1024;
+const KEPT_RESPONSE_FILES = 5;
+const RESPONSE_FILE_PREFIX = "getman-response-";
+const responseFiles: string[] = [];
 
 const ERROR_HINTS: Record<string, string> = {
   ENOTFOUND: "The host name could not be resolved. Check the URL or your network connection.",
@@ -40,6 +50,58 @@ function isTextual(contentType: string, buffer: Buffer) {
     return !buffer.subarray(0, 1024).includes(0);
   }
   return TEXT_TYPES.test(contentType) || /charset=/i.test(contentType);
+}
+
+function rememberResponseFile(file: string) {
+  responseFiles.push(file);
+  while (responseFiles.length > KEPT_RESPONSE_FILES) void unlink(responseFiles.shift()!).catch(() => undefined);
+}
+
+export function removeResponseFiles() {
+  for (const file of responseFiles.splice(0)) {
+    try {
+      unlinkSync(file);
+    } catch {
+      // Already gone.
+    }
+  }
+}
+
+async function readBody(stream: AsyncIterable<Uint8Array> | null) {
+  const preview: Buffer[] = [];
+  let kept = 0;
+  let size = 0;
+  let file: string | null = null;
+  let out: FileHandle | null = null;
+  try {
+    for await (const chunk of stream ?? []) {
+      const buffer = Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+      size += buffer.byteLength;
+      if (!out && kept + buffer.byteLength <= PREVIEW_LIMIT) {
+        preview.push(buffer);
+        kept += buffer.byteLength;
+        continue;
+      }
+      if (!out) {
+        file = path.join(tmpdir(), `${RESPONSE_FILE_PREFIX}${randomUUID()}`);
+        out = await open(file, "w");
+        for (const part of preview) await out.write(part);
+      }
+      await out.write(buffer);
+      if (kept < PREVIEW_LIMIT) {
+        const part = buffer.subarray(0, PREVIEW_LIMIT - kept);
+        preview.push(part);
+        kept += part.byteLength;
+      }
+    }
+  } catch (error) {
+    await out?.close();
+    if (file) await unlink(file).catch(() => undefined);
+    throw error;
+  }
+  await out?.close();
+  if (file) rememberResponseFile(file);
+  return { preview: Buffer.concat(preview, kept), size, file };
 }
 
 export function cancelHttpRequest(id: string) {
@@ -88,10 +150,10 @@ export async function executeHttpRequest(id: string, payload: HttpRequestPayload
       dispatcher: payload.verifySsl ? strictAgent : insecureAgent
     });
 
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const { preview, size, file } = await readBody(response.body);
     const timeMs = Math.round(performance.now() - startedAt);
     const contentType = response.headers.get("content-type") ?? "";
-    const textual = method === "HEAD" || isTextual(contentType, buffer);
+    const textual = method === "HEAD" || isTextual(contentType, preview);
 
     return {
       ok: true,
@@ -102,9 +164,11 @@ export async function executeHttpRequest(id: string, payload: HttpRequestPayload
       cookies: response.headers.getSetCookie(),
       contentType,
       timeMs,
-      sizeBytes: buffer.byteLength,
-      bodyText: textual ? buffer.toString("utf8") : null,
-      bodyBase64: !textual && buffer.byteLength <= MAX_BINARY_PREVIEW ? buffer.toString("base64") : null
+      sizeBytes: size,
+      bodyText: textual ? preview.toString("utf8") : null,
+      bodyBase64: !textual && !file ? preview.toString("base64") : null,
+      truncated: file !== null,
+      bodyFile: file
     };
   } catch (error) {
     const timeMs = Math.round(performance.now() - startedAt);

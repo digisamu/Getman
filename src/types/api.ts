@@ -114,4 +114,6 @@ export type ResponseRecord = {
   sizeBytes: number;
   bodyText: string | null;
   bodyBase64: string | null;
+  truncated: boolean;
+  bodyFile: string | null;
 };

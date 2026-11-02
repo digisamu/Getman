@@ -7,6 +7,7 @@ import "@fontsource-variable/bodoni-moda/wght-italic.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { preloadEditor } from "./components/CodeEditor";
 import { hydrateWorkspace } from "./store/persistence";
 import { useWorkspace } from "./store/workspace";
 import "./styles.css";
@@ -20,3 +21,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <App />
   </React.StrictMode>
 );
+
+// Fetch the editor chunk once the first screen is up and the main thread is free.
+requestIdleCallback(preloadEditor, { timeout: 2000 });

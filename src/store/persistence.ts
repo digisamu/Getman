@@ -44,7 +44,8 @@ function startAutosave() {
     if (!PERSISTED_KEYS.some((key) => state[key] !== previous[key])) return;
     pending = true;
     clearTimeout(timer);
-    timer = setTimeout(write, SAVE_DELAY_MS);
+    // Serialise when the main thread is idle so saving never interrupts typing on a slow machine.
+    timer = setTimeout(() => requestIdleCallback(write, { timeout: 1000 }), SAVE_DELAY_MS);
   });
 
   window.addEventListener("beforeunload", () => {
