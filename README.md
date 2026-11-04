@@ -11,7 +11,7 @@ No account, no cloud, no telemetry. Your requests stay on your computer.
 
 <br />
 
-<img src="docs/screenshots/postman-theme.png" alt="Getman showing a GET request and its JSON response" width="900" />
+<img src="docs/screenshots/system-theme.png" alt="Getman showing a GET request and its JSON response" width="900" />
 
 </div>
 
@@ -63,7 +63,9 @@ Getman isn't signed with a paid Apple or Microsoft certificate yet, so your comp
 
 **Handy tools.** JWT decoder, Base64, JSON formatter, UUID generator and timestamp converter, all offline.
 
-**Four themes.** Postman, Dark, Light, and Sydney:
+**Feels like a Mac app.** A full-height glass sidebar and toolbar drawn by macOS itself (Mica on Windows 11), your system accent colour, system fonts, and native scrollbars. The glass costs no measurable speed, and it turns off automatically when **Reduce transparency** is on.
+
+**Five themes.** System (follows light and dark mode), Postman, Dark, Light, and Sydney:
 
 <div align="center">
 <img src="docs/screenshots/sydney-theme.png" alt="Getman in the Sydney theme" width="900" />
@@ -80,6 +82,7 @@ Getman isn't signed with a paid Apple or Microsoft certificate yet, so your comp
 | New tab | <kbd>⌘</kbd> <kbd>T</kbd> | <kbd>Ctrl</kbd> <kbd>T</kbd> |
 | Close tab | <kbd>⌘</kbd> <kbd>W</kbd> | <kbd>Ctrl</kbd> <kbd>W</kbd> |
 | Switch tab | <kbd>Ctrl</kbd> <kbd>Tab</kbd> | <kbd>Ctrl</kbd> <kbd>Tab</kbd> |
+| Show or hide the sidebar | <kbd>⌃</kbd> <kbd>⌘</kbd> <kbd>S</kbd> | <kbd>Ctrl</kbd> <kbd>B</kbd> |
 | Save | <kbd>⌘</kbd> <kbd>S</kbd> | <kbd>Ctrl</kbd> <kbd>S</kbd> |
 | Import collection | <kbd>⌘</kbd> <kbd>O</kbd> | <kbd>Ctrl</kbd> <kbd>O</kbd> |
 | Settings | <kbd>⌘</kbd> <kbd>,</kbd> | <kbd>Ctrl</kbd> <kbd>,</kbd> |

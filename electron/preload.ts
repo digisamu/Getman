@@ -1,5 +1,16 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { GetmanBridge, MenuCommand } from "../src/shared/ipc";
+import type { AppearanceState, GetmanBridge, MenuCommand } from "../src/shared/ipc";
+
+const APPEARANCE_ARG = "--getman-appearance=";
+
+function initialAppearance(): AppearanceState | null {
+  const arg = process.argv.find((item) => item.startsWith(APPEARANCE_ARG));
+  try {
+    return arg ? (JSON.parse(decodeURIComponent(arg.slice(APPEARANCE_ARG.length))) as AppearanceState) : null;
+  } catch {
+    return null;
+  }
+}
 
 const bridge: GetmanBridge = {
   platform: process.platform,
@@ -12,7 +23,13 @@ const bridge: GetmanBridge = {
   cancelRequest: (id) => ipcRenderer.send("http:cancel", id),
   saveFile: (options) => ipcRenderer.invoke("file:save", options),
   openFile: (options) => ipcRenderer.invoke("file:open", options),
-  setTitleBarColors: (background, symbols) => ipcRenderer.send("window:titlebar", background, symbols),
+  initialAppearance: initialAppearance(),
+  setAppearance: (request) => ipcRenderer.invoke("window:appearance", request),
+  onAppearanceChanged: (listener) => {
+    const handler = () => listener();
+    ipcRenderer.on("appearance:changed", handler);
+    return () => ipcRenderer.removeListener("appearance:changed", handler);
+  },
   onMenuCommand: (listener) => {
     const handler = (_event: Electron.IpcRendererEvent, command: MenuCommand) => listener(command);
     ipcRenderer.on("menu:command", handler);

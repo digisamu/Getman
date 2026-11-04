@@ -1,7 +1,7 @@
 {
   "name": "getman",
   "productName": "Getman",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Offline-first desktop API client",
   "author": {
     "name": "Getman",
@@ -133,8 +133,6 @@
     "@codemirror/state": "^6.7.6",
     "@codemirror/view": "^6.43.15",
     "@fontsource-variable/bodoni-moda": "^5.3.0",
-    "@fontsource-variable/jetbrains-mono": "^5.3.0",
-    "@fontsource/ibm-plex-sans": "^5.3.0",
     "@lezer/highlight": "^1.2.5",
     "@types/node": "^22.20.5",
     "@types/react": "^18.3.31",

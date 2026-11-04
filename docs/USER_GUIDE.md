@@ -2,9 +2,9 @@
 
 ## The window
 
-- **Title bar**: active environment, theme, developer tools and settings.
-- **Sidebar**: collections and history, with a filter box.
-- **Tabs**: each open request has its own tab and keeps its own last response. A dot on a saved request's tab means it has unsaved changes. Italic names are requests not yet saved to a collection.
+- **Toolbar**: request tabs, active environment, theme, developer tools and settings.
+- **Sidebar**: collections and history, with a filter box. Hide it with the sidebar button or ⌃⌘S (Ctrl+B on Windows and Linux).
+- **Tabs** (in the toolbar): each open request has its own tab and keeps its own last response. A dot on a saved request's tab means it has unsaved changes. Italic names are requests not yet saved to a collection.
 - **Request**: name, URL bar, then Params, Auth, Headers, Body and Code.
 - **Response**: beside or below the request (change it in Settings). Drag the divider to resize; double-click it to reset.
 
@@ -47,7 +47,7 @@ If you add your own `Authorization` header, it wins.
 
 Write variables as `{{NAME}}` anywhere in the URL, params, headers, auth or body. They are green when the active environment defines them and red when it does not.
 
-Choose the active environment from the title bar, or pick **Manage environments…** to add, rename, duplicate or delete environments and edit their variables.
+Choose the active environment from the toolbar, or pick **Manage environments…** to add, rename, duplicate or delete environments and edit their variables.
 
 ## Collections
 
@@ -83,6 +83,7 @@ The wrench opens a side panel with a JWT decoder (shows expiry), Base64 encode/d
 - **Verify SSL certificates**
 - **Follow redirects**
 - **Response position**: beside or below the request
+- **Glass effects**: the translucent sidebar and toolbar. On by default on macOS. On Windows 11 you can turn it on to use the Mica material. Turns off automatically when Reduce transparency is on in your system settings.
 
 ## Privacy
 

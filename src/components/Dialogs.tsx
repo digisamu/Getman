@@ -1,5 +1,6 @@
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { isMac } from "../lib/bridge";
 import { useUi, type Dialog } from "../store/ui";
 import { useWorkspace } from "../store/workspace";
 import { KeyValueTable } from "./KeyValueTable";
@@ -224,6 +225,16 @@ function EnvironmentsDialog({ initialId, onClose }: { initialId?: string; onClos
 function SettingsDialog({ onClose }: { onClose: () => void }) {
   const settings = useWorkspace((state) => state.settings);
   const update = useWorkspace((state) => state.updateSettings);
+  const appearance = useUi((state) => state.appearance);
+  const glassDescription = !appearance?.supported
+    ? isMac
+      ? "Available in the desktop app."
+      : "Needs Windows 11 (22H2 or newer)."
+    : appearance.reducedTransparency
+      ? "Off because Reduce transparency is on in your system settings."
+      : isMac
+        ? "Translucent sidebar and toolbar, drawn by macOS."
+        : "Mica material behind the sidebar and toolbar.";
 
   return (
     <Modal title="Settings" onClose={onClose} width={480}>
@@ -243,6 +254,9 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
         </Setting>
         <Setting title="Follow redirects" description="Follow 3xx responses automatically instead of showing them.">
           <Toggle checked={settings.followRedirects} onChange={(followRedirects) => update({ followRedirects })} />
+        </Setting>
+        <Setting title="Glass effects" description={glassDescription}>
+          <Toggle checked={settings.translucency && Boolean(appearance?.supported)} disabled={!appearance?.supported} onChange={(translucency) => update({ translucency })} />
         </Setting>
         <Setting title="Response position" description="Show the response beside the request or below it.">
           <div className="seg">
@@ -271,13 +285,14 @@ function Setting({ title, description, children }: { title: string; description:
   );
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
+function Toggle({ checked, onChange, disabled = false }: { checked: boolean; onChange: (value: boolean) => void; disabled?: boolean }) {
   return (
     <button
       role="switch"
       aria-checked={checked}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? "bg-accent" : "bg-line-strong"}`}
+      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-40 ${checked ? "bg-accent" : "bg-line-strong"}`}
     >
       <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-[18px]" : "translate-x-0.5"}`} />
     </button>

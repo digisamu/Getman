@@ -7,11 +7,146 @@
    --------------------------------------------------------------------------- */
 
 :root {
-  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* System fonts: native-looking, and nothing to download before the first paint. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, Ubuntu, Cantarell, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, "Cascadia Mono", Consolas, "Liberation Mono", monospace;
   --font-display: var(--font-sans);
   --radius: 6px;
   --radius-lg: 10px;
+
+  /* The window frame (sidebar, toolbar, tools) is tinted glass when translucency is on. */
+  --chrome-alpha: 62%;
+  --chrome: color-mix(in srgb, var(--sidebar) var(--chrome-alpha), transparent);
+  /* Menus, sheets and HUDs: small surfaces, so their CSS blur stays cheap. */
+  --material: color-mix(in srgb, var(--elevated) 80%, transparent);
+  --material-strong: color-mix(in srgb, var(--elevated) 92%, transparent);
+}
+
+/* Without native glass the frame is simply opaque. */
+html:not([data-translucent="true"]) {
+  --chrome-alpha: 100%;
+}
+
+/* Shared control tokens for light and dark appearances. */
+[data-theme="light"],
+[data-theme="sydney"],
+[data-theme="system"] {
+  --control: #ffffff;
+  --control-hover: #fafafa;
+  --control-active: #ececec;
+  --control-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.16), 0 0.5px 1.5px rgba(0, 0, 0, 0.12);
+  --seg-track: rgba(0, 0, 0, 0.06);
+  --seg-thumb: #ffffff;
+  --tab-active: rgba(255, 255, 255, 0.85);
+  --hover-strong: rgba(0, 0, 0, 0.09);
+  --material-border: rgba(0, 0, 0, 0.12);
+  --scrim: rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="postman"],
+[data-theme="dark"] {
+  --control: rgba(255, 255, 255, 0.1);
+  --control-hover: rgba(255, 255, 255, 0.14);
+  --control-active: rgba(255, 255, 255, 0.2);
+  --control-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.1), 0 0 0 0.5px rgba(0, 0, 0, 0.45), 0 1px 1.5px rgba(0, 0, 0, 0.25);
+  --seg-track: rgba(0, 0, 0, 0.22);
+  --seg-thumb: rgba(255, 255, 255, 0.16);
+  --tab-active: rgba(255, 255, 255, 0.1);
+  --hover-strong: rgba(255, 255, 255, 0.12);
+  --material-border: rgba(255, 255, 255, 0.12);
+  --scrim: rgba(0, 0, 0, 0.4);
+}
+
+/* System — follows macOS light/dark and the system accent colour. */
+[data-theme="system"] {
+  color-scheme: light;
+  --accent: var(--system-accent, #007aff);
+  --accent-hover: color-mix(in srgb, var(--accent) 86%, black);
+  --accent-fg: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  --focus: color-mix(in srgb, var(--accent) 50%, transparent);
+  --bg: #ffffff;
+  --sidebar: #f2f2f4;
+  --surface: #ffffff;
+  --field: #ffffff;
+  --elevated: #f6f6f8;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.2);
+  --hover: rgba(0, 0, 0, 0.05);
+  --selected: rgba(0, 0, 0, 0.08);
+  --text: #1d1d1f;
+  --text-muted: #6e6e73;
+  --text-faint: #a1a1a6;
+  --success: #248a3d;
+  --warning: #b25000;
+  --danger: #d70015;
+  --info: #0062cc;
+  --m-get: #248a3d;
+  --m-post: #b25000;
+  --m-put: #0062cc;
+  --m-patch: #8944ab;
+  --m-delete: #d70015;
+  --m-other: #6e6e73;
+  --syn-key: #0b4f79;
+  --syn-string: #c41a16;
+  --syn-number: #1c00cf;
+  --syn-bool: #9b2393;
+  --syn-null: #9b2393;
+  --syn-punct: #6e6e73;
+  --syn-tag: #9b2393;
+  --syn-attr: #815f03;
+  --syn-comment: #5d6c79;
+  --shadow-pop: 0 10px 34px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] {
+    color-scheme: dark;
+    --accent: var(--system-accent, #0a84ff);
+    --accent-hover: color-mix(in srgb, var(--accent) 84%, white);
+    --bg: #1e1e1e;
+    --sidebar: #2a2a2c;
+    --surface: #1e1e1e;
+    --field: #252527;
+    --elevated: #2c2c2e;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --hover: rgba(255, 255, 255, 0.06);
+    --selected: rgba(255, 255, 255, 0.1);
+    --text: #f5f5f7;
+    --text-muted: #98989d;
+    --text-faint: #636366;
+    --success: #30d158;
+    --warning: #ff9f0a;
+    --danger: #ff453a;
+    --info: #409cff;
+    --m-get: #30d158;
+    --m-post: #ff9f0a;
+    --m-put: #409cff;
+    --m-patch: #bf5af2;
+    --m-delete: #ff453a;
+    --m-other: #98989d;
+    --syn-key: #5dd8ff;
+    --syn-string: #fc6a5d;
+    --syn-number: #d0bf69;
+    --syn-bool: #fc5fa3;
+    --syn-null: #fc5fa3;
+    --syn-punct: #98989d;
+    --syn-tag: #fc5fa3;
+    --syn-attr: #bf8555;
+    --syn-comment: #6c7986;
+    --shadow-pop: 0 12px 36px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+    --control: rgba(255, 255, 255, 0.1);
+    --control-hover: rgba(255, 255, 255, 0.14);
+    --control-active: rgba(255, 255, 255, 0.2);
+    --control-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.1), 0 0 0 0.5px rgba(0, 0, 0, 0.45), 0 1px 1.5px rgba(0, 0, 0, 0.25);
+    --seg-track: rgba(0, 0, 0, 0.22);
+    --seg-thumb: rgba(255, 255, 255, 0.16);
+    --tab-active: rgba(255, 255, 255, 0.1);
+    --hover-strong: rgba(255, 255, 255, 0.12);
+    --material-border: rgba(255, 255, 255, 0.12);
+    --scrim: rgba(0, 0, 0, 0.4);
+  }
 }
 
 /* Postman — dense charcoal workbench with the brand orange. */
@@ -54,7 +189,6 @@
   --syn-attr: #9cdcfe;
   --syn-comment: #6a9955;
   --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
-  --scrim: rgba(0, 0, 0, 0.5);
 }
 
 /* Dark — cool graphite with a clear blue accent. */
@@ -97,14 +231,13 @@
   --syn-attr: #f5b971;
   --syn-comment: #5e6978;
   --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(160, 190, 230, 0.08);
-  --scrim: rgba(3, 6, 10, 0.55);
 }
 
 /* Light — bright, neutral, crisp. */
 [data-theme="light"] {
   color-scheme: light;
   --bg: #ffffff;
-  --sidebar: #f7f7f8;
+  --sidebar: #f5f5f6;
   --surface: #ffffff;
   --field: #ffffff;
   --elevated: #ffffff;
@@ -140,7 +273,6 @@
   --syn-attr: #a5361a;
   --syn-comment: #8a8f98;
   --shadow-pop: 0 10px 30px rgba(20, 24, 32, 0.12), 0 0 0 1px rgba(20, 24, 32, 0.06);
-  --scrim: rgba(20, 24, 32, 0.28);
 }
 
 /* Sydney — soft glam: porcelain and blush, lipstick rose, baby blue, champagne hairlines,
@@ -150,11 +282,12 @@
   --font-display: "Bodoni Moda Variable", "Didot", "Bodoni 72", serif;
   --radius: 8px;
   --radius-lg: 14px;
+  --chrome-alpha: 55%;
   --bg: #fdf9f7;
   --sidebar: #f8efec;
   --surface: #fdf9f7;
   --field: #ffffff;
-  --elevated: #ffffff;
+  --elevated: #fffafa;
   --border: #eedcd8;
   --border-strong: #dfc2bd;
   --hover: rgba(194, 65, 107, 0.06);
@@ -188,8 +321,11 @@
   --syn-comment: #a9939f;
   --champagne: #d9bc8c;
   --baby-blue: #b9d6f2;
-  --shadow-pop: 0 18px 40px rgba(122, 52, 82, 0.14), 0 0 0 1px rgba(194, 65, 107, 0.08);
-  --scrim: rgba(60, 30, 50, 0.22);
+  --tab-active: rgba(255, 255, 255, 0.9);
+  --seg-track: rgba(194, 65, 107, 0.08);
+  --material-border: rgba(194, 65, 107, 0.16);
+  --shadow-pop: 0 18px 40px rgba(122, 52, 82, 0.16), 0 2px 6px rgba(122, 52, 82, 0.08);
+  --scrim: rgba(60, 30, 50, 0.18);
 }
 
 /* ---------------------------------------------------------------------------
@@ -202,14 +338,25 @@ body,
   height: 100%;
 }
 
+html,
+body {
+  background: var(--bg);
+}
+
+/* With native glass the page is see-through wherever the frame does not paint. */
+html[data-translucent="true"],
+html[data-translucent="true"] body {
+  background: transparent;
+}
+
 body {
   margin: 0;
   overflow: hidden;
-  background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 13px;
   line-height: 20px;
+  letter-spacing: -0.003em;
   -webkit-font-smoothing: antialiased;
   user-select: none;
   cursor: default;
@@ -245,23 +392,24 @@ button {
   color: var(--text-faint);
 }
 
-::-webkit-scrollbar {
+/* macOS keeps its native overlay scrollbars; elsewhere use thin, quiet ones. */
+html:not([data-platform="darwin"]) ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
-::-webkit-scrollbar-thumb {
+html:not([data-platform="darwin"]) ::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--text-faint) 45%, transparent);
   border: 3px solid transparent;
   border-radius: 999px;
   background-clip: padding-box;
 }
 
-::-webkit-scrollbar-thumb:hover {
+html:not([data-platform="darwin"]) ::-webkit-scrollbar-thumb:hover {
   background-color: color-mix(in srgb, var(--text-faint) 75%, transparent);
 }
 
-::-webkit-scrollbar-corner {
+html:not([data-platform="darwin"]) ::-webkit-scrollbar-corner {
   background: transparent;
 }
 
@@ -272,6 +420,25 @@ button {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Window frame
+   --------------------------------------------------------------------------- */
+
+.chrome {
+  background: var(--chrome);
+}
+
+/* Like native apps, the frame goes quiet when another window is in front. */
+html[data-focused="false"] .toolbar,
+html[data-focused="false"] .sidebar-header {
+  --text: var(--text-muted);
+}
+
+html[data-focused="false"] .tab[data-active="true"] {
+  box-shadow: none;
+  background: var(--hover);
 }
 
 /* ---------------------------------------------------------------------------
@@ -287,12 +454,19 @@ button {
     -webkit-app-region: no-drag;
   }
 
+  /* macOS push button */
   .btn {
-    @apply inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded border border-line bg-field px-3 text-sm font-medium text-fg transition-colors;
+    @apply inline-flex h-7 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2.5 text-[13px] font-medium text-fg;
+    background: var(--control);
+    box-shadow: var(--control-shadow);
   }
 
   .btn:hover:not(:disabled) {
-    @apply border-line-strong bg-hover;
+    background: var(--control-hover);
+  }
+
+  .btn:active:not(:disabled) {
+    background: var(--control-active);
   }
 
   .btn:disabled {
@@ -300,11 +474,19 @@ button {
   }
 
   .btn-primary {
-    @apply inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded bg-accent px-4 text-sm font-semibold text-accent-fg transition-colors;
+    @apply inline-flex h-7 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3.5 text-[13px] font-semibold text-accent-fg;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0)) var(--accent);
+    box-shadow:
+      0 0 0 0.5px color-mix(in srgb, var(--accent) 70%, black),
+      0 1px 2px rgba(0, 0, 0, 0.16);
   }
 
   .btn-primary:hover:not(:disabled) {
-    @apply bg-accent-hover;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.02)) var(--accent);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    background: var(--accent-hover);
   }
 
   .btn-primary:disabled {
@@ -312,53 +494,63 @@ button {
   }
 
   .btn-danger {
-    @apply inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded bg-danger px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90;
+    @apply inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-md px-3.5 text-[13px] font-semibold text-white;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0)) var(--danger);
+    box-shadow:
+      0 0 0 0.5px color-mix(in srgb, var(--danger) 70%, black),
+      0 1px 2px rgba(0, 0, 0, 0.16);
   }
 
   .btn-ghost {
-    @apply inline-flex h-7 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded px-2 text-sm text-muted transition-colors hover:bg-hover hover:text-fg;
+    @apply inline-flex h-7 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2 text-[13px] text-muted transition-colors hover:bg-hover hover:text-fg;
   }
 
   .icon-btn {
-    @apply inline-grid h-7 w-7 shrink-0 place-items-center rounded text-muted transition-colors hover:bg-hover hover:text-fg disabled:opacity-40;
+    @apply inline-grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted transition-colors hover:bg-hover hover:text-fg disabled:opacity-40;
   }
 
+  .icon-btn:active:not(:disabled) {
+    background: var(--hover-strong);
+  }
+
+  /* macOS text field with a soft focus ring */
   .input {
-    @apply h-8 w-full min-w-0 rounded border border-line bg-field px-2.5 text-sm text-fg transition-colors;
-  }
-
-  .input:hover {
-    @apply border-line-strong;
+    @apply h-7 w-full min-w-0 rounded-md border border-line bg-field px-2 text-[13px] text-fg;
+    transition: box-shadow 0.12s ease, border-color 0.12s ease;
   }
 
   .input:focus {
-    @apply border-accent;
+    border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
     outline: none;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+    box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--accent) 32%, transparent);
   }
 
   .field-label {
     @apply mb-1.5 block text-xs font-medium text-muted;
   }
 
+  /* macOS segmented control: a recessed track with a raised thumb */
   .seg {
-    @apply inline-flex rounded border border-line bg-field p-0.5;
+    @apply inline-flex items-center rounded-[7px] p-[2px];
+    background: var(--seg-track);
   }
 
   .seg-item {
-    @apply h-6 rounded-[4px] px-2.5 text-xs font-medium text-muted transition-colors hover:text-fg;
+    @apply h-[22px] rounded-[5px] px-2.5 text-xs font-medium text-muted transition-colors hover:text-fg;
   }
 
   .seg-item[data-active="true"] {
-    @apply bg-selected text-fg;
+    @apply text-fg;
+    background: var(--seg-thumb);
+    box-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.18), 0 0 0 0.5px rgba(0, 0, 0, 0.05);
   }
 
   .subtab {
-    @apply relative flex h-9 items-center gap-1.5 px-1 text-sm text-muted transition-colors hover:text-fg;
+    @apply relative flex h-9 items-center gap-1.5 px-1 text-[13px] text-muted transition-colors hover:text-fg;
   }
 
   .subtab[data-active="true"] {
-    @apply text-fg;
+    @apply font-medium text-fg;
   }
 
   .subtab[data-active="true"]::after {
@@ -370,29 +562,115 @@ button {
     @apply rounded-full bg-hover px-1.5 font-mono text-2xs text-muted;
   }
 
+  /* Toolbar tabs, like Safari's compact tabs */
+  .tab {
+    @apply relative flex h-7 min-w-[116px] max-w-[210px] items-center gap-2 rounded-[7px] pl-2.5 pr-1 text-[12.5px] text-muted transition-colors;
+    flex: 1 1 0;
+  }
+
+  .tab:hover {
+    @apply bg-hover text-fg;
+  }
+
+  .tab[data-active="true"] {
+    @apply text-fg;
+    background: var(--tab-active);
+    box-shadow: var(--control-shadow);
+  }
+
+  .tab-close {
+    @apply absolute inset-0 grid place-items-center rounded-[4px] text-muted transition-opacity;
+  }
+
+  .tab-close:hover {
+    @apply text-fg;
+    background: var(--hover-strong);
+  }
+
+  /* Menus: translucent material; the highlighted row takes the accent colour, as on macOS. */
   .menu {
-    @apply z-50 min-w-[180px] rounded-lg border border-line bg-elevated p-1 shadow-pop;
+    @apply z-50 min-w-[180px] rounded-[10px] p-[5px];
+    background: var(--material);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    box-shadow:
+      var(--shadow-pop),
+      inset 0 0 0 0.5px var(--material-border);
   }
 
   .menu-item {
-    @apply flex h-8 w-full items-center gap-2 rounded px-2 text-left text-sm text-fg hover:bg-hover;
+    @apply flex h-[26px] w-full items-center gap-2 rounded-[5px] px-2 text-left text-[13px] text-fg;
+  }
+
+  .menu-item:hover,
+  .menu-item:focus-visible {
+    outline: none;
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  .menu-item:hover *,
+  .menu-item:focus-visible * {
+    color: inherit;
   }
 
   .menu-item[data-danger="true"] {
     @apply text-danger;
   }
 
+  .menu-item[data-danger="true"]:hover {
+    background: var(--danger);
+    color: #ffffff;
+  }
+
   .menu-sep {
-    @apply my-1 h-px bg-line;
+    @apply mx-2 my-[5px] h-px bg-line;
+  }
+
+  /* Dialogs: a sheet of strong material over a light dim */
+  .sheet {
+    @apply rounded-[12px];
+    background: var(--material-strong);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    backdrop-filter: blur(30px) saturate(180%);
+    box-shadow:
+      0 24px 64px rgba(0, 0, 0, 0.28),
+      0 2px 8px rgba(0, 0, 0, 0.12),
+      inset 0 0 0 0.5px var(--material-border);
+  }
+
+  /* Toasts: a HUD pill */
+  .hud {
+    @apply rounded-full px-4 py-[7px] text-[13px] font-medium text-white;
+    background: rgba(30, 30, 32, 0.74);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  }
+
+  .hud-danger {
+    color: #ff9a92;
   }
 
   .kbd {
-    @apply rounded border border-line bg-field px-1.5 py-px font-mono text-2xs text-muted;
+    @apply rounded-[4px] px-1.5 py-px font-mono text-2xs text-muted;
+    background: var(--control);
+    box-shadow: var(--control-shadow);
   }
 
   .method {
     @apply font-mono text-2xs font-bold tracking-tight;
   }
+}
+
+/* Without native glass, menus and sheets fall back to solid surfaces. */
+html:not([data-translucent="true"]) .menu,
+html:not([data-translucent="true"]) .sheet,
+html:not([data-translucent="true"]) .hud {
+  --material: var(--elevated);
+  --material-strong: var(--elevated);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .method-GET { color: var(--m-get); }
@@ -448,7 +726,7 @@ button {
 }
 
 .pop-in {
-  animation: pop-in 140ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  animation: pop-in 160ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
 }
 
 @keyframes fade-in {
@@ -456,7 +734,7 @@ button {
 }
 
 @keyframes pop-in {
-  from { opacity: 0; transform: translateY(4px) scale(0.985); }
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
 }
 
 /* ---------------------------------------------------------------------------
@@ -465,26 +743,34 @@ button {
 
 .wordmark {
   font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 650;
+  letter-spacing: -0.015em;
 }
 
 /* ---------------------------------------------------------------------------
    Sydney signature details
    --------------------------------------------------------------------------- */
 
-[data-theme="sydney"] .titlebar {
+[data-theme="sydney"] .sidebar {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #f8efec var(--chrome-alpha), transparent) 0%,
+    color-mix(in srgb, #f6edf1 var(--chrome-alpha), transparent) 60%,
+    color-mix(in srgb, #eff3f9 var(--chrome-alpha), transparent) 100%
+  );
+}
+
+[data-theme="sydney"] .toolbar {
   background:
-    radial-gradient(120% 220% at 0% 0%, color-mix(in srgb, var(--baby-blue) 45%, transparent), transparent 45%),
-    radial-gradient(90% 260% at 100% 0%, color-mix(in srgb, #f4c6d3 55%, transparent), transparent 55%),
-    var(--bg);
+    radial-gradient(90% 260% at 100% 0%, color-mix(in srgb, #f4c6d3 40%, transparent), transparent 55%),
+    var(--chrome);
   border-bottom-color: color-mix(in srgb, var(--champagne) 70%, transparent);
 }
 
 [data-theme="sydney"] .wordmark {
   font-style: italic;
   font-weight: 500;
-  font-size: 22px;
+  font-size: 21px;
   letter-spacing: 0.005em;
   color: var(--accent);
 }
@@ -508,10 +794,6 @@ button {
 
 [data-theme="sydney"] .subtab[data-active="true"]::after {
   background: linear-gradient(90deg, var(--accent), var(--champagne));
-}
-
-[data-theme="sydney"] .sidebar {
-  background: linear-gradient(180deg, #f8efec 0%, #f6edf1 60%, #eff3f9 100%);
 }
 
 [data-theme="sydney"] .dialog-title {

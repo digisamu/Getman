@@ -1,13 +1,17 @@
-import { BrowserWindow, Menu, app, dialog, ipcMain, net, protocol, shell, type MenuItemConstructorOptions } from "electron";
+import { BrowserWindow, Menu, app, dialog, ipcMain, nativeTheme, net, protocol, shell, systemPreferences, type MenuItemConstructorOptions } from "electron";
 import { existsSync, readFileSync } from "node:fs";
 import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { release, tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { HttpRequestPayload, MenuCommand, OpenFileOptions, SaveFileOptions } from "../src/shared/ipc";
+import type { AppearanceRequest, AppearanceState, HttpRequestPayload, MenuCommand, OpenFileOptions, SaveFileOptions } from "../src/shared/ipc";
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 const isMac = process.platform === "darwin";
+const isWindows = process.platform === "win32";
+// Mica needs Windows 11 22H2 (build 22621) or newer.
+const supportsGlass = isMac || (isWindows && Number(release().split(".")[2] ?? 0) >= 22621);
+const TOOLBAR_HEIGHT = 52;
 
 app.setName("Getman");
 // Lets development and test runs use a throwaway profile instead of the real workspace.
@@ -26,12 +30,15 @@ const workspaceFile = () => path.join(app.getPath("userData"), "workspace.json")
 // Workspaces written by the old Tauri build live under the bundle identifier.
 const legacyWorkspaceFile = () => path.join(app.getPath("appData"), "com.getman.desktop", "workspace.json");
 
-const THEME_BACKGROUNDS: Record<string, string> = {
-  postman: "#1c1c1c",
-  dark: "#0e1116",
-  light: "#f6f7f9",
-  sydney: "#fbf6f4"
+// Opaque window colours per theme, painted before the page loads.
+const THEME_BACKGROUNDS: Record<string, { light: string; dark: string }> = {
+  system: { light: "#f5f5f7", dark: "#2a2a2c" },
+  postman: { light: "#212121", dark: "#212121" },
+  dark: { light: "#12161c", dark: "#12161c" },
+  light: { light: "#f7f7f8", dark: "#f7f7f8" },
+  sydney: { light: "#f8efec", dark: "#f8efec" }
 };
+const THEME_MODES: Record<string, AppearanceRequest["mode"]> = { system: "system", postman: "dark", dark: "dark", light: "light", sydney: "light" };
 
 let mainWindow: BrowserWindow | null = null;
 let writeQueue: Promise<void> = Promise.resolve();
@@ -63,18 +70,59 @@ function writeWorkspace(data: string) {
   return writeQueue;
 }
 
-function savedThemeBackground() {
+/** Reads just enough of the saved workspace to style the window before the page has loaded. */
+function savedAppearance(): AppearanceRequest {
+  let raw = "";
   try {
-    const raw = readFileSync(existsSync(workspaceFile()) ? workspaceFile() : legacyWorkspaceFile(), "utf8");
-    const theme = /"theme"\s*:\s*"(\w+)"/.exec(raw)?.[1] ?? "postman";
-    return THEME_BACKGROUNDS[theme] ?? THEME_BACKGROUNDS.postman;
+    raw = readFileSync(existsSync(workspaceFile()) ? workspaceFile() : legacyWorkspaceFile(), "utf8");
   } catch {
-    return THEME_BACKGROUNDS.postman;
+    // First launch.
   }
+  const theme = /"theme"\s*:\s*"(\w+)"/.exec(raw)?.[1] ?? "system";
+  const saved = /"translucency"\s*:\s*(true|false)/.exec(raw)?.[1];
+  const mode = THEME_MODES[theme] ?? "system";
+  nativeTheme.themeSource = mode;
+  const colors = THEME_BACKGROUNDS[theme] ?? THEME_BACKGROUNDS.system;
+  return {
+    mode,
+    translucency: saved ? saved === "true" : isMac,
+    background: nativeTheme.shouldUseDarkColors ? colors.dark : colors.light,
+    symbols: nativeTheme.shouldUseDarkColors ? "#c7c7cc" : "#3c3c43"
+  };
+}
+
+function accentColor() {
+  if (!isMac && !isWindows) return null;
+  const value = systemPreferences.getAccentColor();
+  return typeof value === "string" && value.length >= 6 ? `#${value.slice(0, 6)}` : null;
+}
+
+function appearanceState(request: AppearanceRequest): AppearanceState {
+  const reducedTransparency = nativeTheme.prefersReducedTransparency;
+  return {
+    translucent: request.translucency && supportsGlass && !reducedTransparency,
+    supported: supportsGlass,
+    reducedTransparency,
+    accent: accentColor()
+  };
+}
+
+function applyAppearance(window: BrowserWindow, request: AppearanceRequest): AppearanceState {
+  // Only assign when it changes: every assignment can emit "updated", which would loop back here.
+  if (nativeTheme.themeSource !== request.mode) nativeTheme.themeSource = request.mode;
+  const state = appearanceState(request);
+  // The window server draws the glass, so it costs almost nothing on the GPU, even on low-end laptops.
+  if (isMac) window.setVibrancy(state.translucent ? "sidebar" : null);
+  if (isWindows && supportsGlass) window.setBackgroundMaterial(state.translucent ? "mica" : "none");
+  window.setBackgroundColor(state.translucent ? "#00000000" : request.background);
+  if (!isMac) window.setTitleBarOverlay?.({ color: state.translucent ? "#00000000" : request.background, symbolColor: request.symbols, height: TOOLBAR_HEIGHT });
+  return state;
 }
 
 function createWindow() {
-  const background = savedThemeBackground();
+  const appearance = savedAppearance();
+  const initial = appearanceState(appearance);
+  const background = initial.translucent ? "#00000000" : appearance.background;
   mainWindow = new BrowserWindow({
     width: 1360,
     height: 860,
@@ -84,11 +132,15 @@ function createWindow() {
     title: "Getman",
     backgroundColor: background,
     titleBarStyle: isMac ? "hiddenInset" : "hidden",
-    trafficLightPosition: { x: 14, y: 13 },
-    titleBarOverlay: isMac ? undefined : { color: background, symbolColor: "#888888", height: 44 },
+    trafficLightPosition: { x: 18, y: 19 },
+    titleBarOverlay: isMac ? undefined : { color: background, symbolColor: appearance.symbols, height: TOOLBAR_HEIGHT },
+    vibrancy: isMac && initial.translucent ? "sidebar" : undefined,
+    visualEffectState: "followWindow",
+    backgroundMaterial: isWindows && supportsGlass ? (initial.translucent ? "mica" : "none") : undefined,
     icon: isMac ? undefined : path.join(__dirname, isDev ? "../public/app-icon.png" : "../dist/app-icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
+      additionalArguments: [`--getman-appearance=${encodeURIComponent(JSON.stringify(initial))}`],
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -158,6 +210,8 @@ function buildMenu() {
     {
       label: "View",
       submenu: [
+        { label: "Toggle Sidebar", accelerator: isMac ? "Ctrl+Cmd+S" : "Ctrl+B", click: () => sendMenuCommand("toggle-sidebar") },
+        { type: "separator" },
         { role: "reload" },
         ...(isDev ? [{ role: "toggleDevTools" as const }] : []),
         { type: "separator" },
@@ -208,11 +262,15 @@ function registerIpc() {
     return readFile(result.filePaths[0], "utf8");
   });
 
-  ipcMain.on("window:titlebar", (_event, background: string, symbols: string) => {
-    if (!mainWindow || isMac) return;
-    mainWindow.setBackgroundColor(background);
-    mainWindow.setTitleBarOverlay?.({ color: background, symbolColor: symbols });
-  });
+  ipcMain.handle("window:appearance", (_event, request: AppearanceRequest) =>
+    mainWindow ? applyAppearance(mainWindow, request) : appearanceState(request)
+  );
+
+  // Tell the page when the accent colour or "Reduce transparency" changes so it can re-apply its look.
+  const notify = () => mainWindow?.webContents.send("appearance:changed");
+  nativeTheme.on("updated", notify);
+  if (isMac) systemPreferences.subscribeNotification("AppleColorPreferencesChangedNotification", notify);
+  if (isWindows) systemPreferences.on("accent-color-changed", notify);
 }
 
 if (!app.requestSingleInstanceLock()) {

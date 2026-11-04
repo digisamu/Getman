@@ -3,16 +3,16 @@ import { DialogHost } from "./components/Dialogs";
 import { RequestHeader, RequestPane } from "./components/RequestPane";
 import { ResponsePane } from "./components/ResponsePane";
 import { Sidebar, importCollectionFromFile } from "./components/Sidebar";
-import { TabBar, requestCloseTab } from "./components/TabBar";
-import { TitleBar } from "./components/TitleBar";
+import { requestCloseTab } from "./components/TabBar";
 import { ToolsPanel } from "./components/ToolsPanel";
+import { THEME_MODES, Toolbar } from "./components/Toolbar";
 import { saveActiveTab } from "./components/UrlBar";
 import { Splitter } from "./components/ui/Splitter";
 import { bridge, isDesktop } from "./lib/bridge";
 import { variableMap } from "./lib/variables";
 import { cancelTab, sendTab } from "./store/responses";
 import { useUi } from "./store/ui";
-import type { MenuCommand } from "./shared/ipc";
+import type { AppearanceState, MenuCommand } from "./shared/ipc";
 import { useActiveEnvironment, useActiveTab, useWorkspace } from "./store/workspace";
 
 function runCommand(command: MenuCommand) {
@@ -32,7 +32,18 @@ function runCommand(command: MenuCommand) {
       return void importCollectionFromFile();
     case "settings":
       return ui.openDialog({ kind: "settings" });
+    case "toggle-sidebar":
+      return useWorkspace.getState().toggleSidebar();
   }
+}
+
+/** Reflects what the main process applied: glass on or off, and the system accent colour. */
+export function applyAppearanceState(state: AppearanceState | null) {
+  const root = document.documentElement;
+  root.dataset.translucent = String(Boolean(state?.translucent));
+  if (state?.accent) root.style.setProperty("--system-accent", state.accent);
+  else root.style.removeProperty("--system-accent");
+  useUi.getState().setAppearance(state);
 }
 
 function useShortcuts() {
@@ -55,7 +66,7 @@ function useShortcuts() {
         setActiveTab(tabs[next].id);
       } else if (!isDesktop && mod) {
         // In Electron these come from the native menu; in a browser preview handle them here.
-        const commands: Record<string, MenuCommand> = { s: event.shiftKey ? "save-as" : "save", o: "import", ",": "settings" };
+        const commands: Record<string, MenuCommand> = { s: event.shiftKey ? "save-as" : "save", o: "import", ",": "settings", b: "toggle-sidebar" };
         const command = commands[event.key.toLowerCase()];
         if (command) {
           event.preventDefault();
@@ -71,13 +82,44 @@ function useShortcuts() {
   }, []);
 }
 
-function useThemeSync() {
+function useAppearance() {
   const theme = useWorkspace((state) => state.theme);
+  const translucency = useWorkspace((state) => state.settings.translucency);
+
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    const styles = getComputedStyle(document.documentElement);
-    bridge.setTitleBarColors(styles.getPropertyValue("--sidebar").trim(), styles.getPropertyValue("--text-muted").trim());
-  }, [theme]);
+    let current = true;
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    const apply = async () => {
+      const styles = getComputedStyle(root);
+      const state = await bridge.setAppearance({
+        mode: THEME_MODES[theme],
+        translucency,
+        background: styles.getPropertyValue("--sidebar").trim(),
+        symbols: styles.getPropertyValue("--text-muted").trim()
+      });
+      if (current) applyAppearanceState(state);
+    };
+    void apply();
+    const unsubscribe = bridge.onAppearanceChanged(() => void apply());
+    return () => {
+      current = false;
+      unsubscribe();
+    };
+  }, [theme, translucency]);
+
+  // Native apps quiet their window chrome when another app is in front.
+  useEffect(() => {
+    const root = document.documentElement;
+    const update = () => (root.dataset.focused = String(document.hasFocus()));
+    update();
+    window.addEventListener("focus", update);
+    window.addEventListener("blur", update);
+    return () => {
+      window.removeEventListener("focus", update);
+      window.removeEventListener("blur", update);
+    };
+  }, []);
 }
 
 function Workbench() {
@@ -117,7 +159,7 @@ function Toasts() {
   return (
     <div className="pointer-events-none fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center gap-2" aria-live="polite">
       {toasts.map((toast) => (
-        <div key={toast.id} className={`pop-in rounded-lg border border-line bg-elevated px-3.5 py-2 text-sm shadow-pop ${toast.tone === "danger" ? "text-danger" : "text-fg"}`}>
+        <div key={toast.id} className={`hud pop-in ${toast.tone === "danger" ? "hud-danger" : ""}`}>
           {toast.message}
         </div>
       ))}
@@ -127,23 +169,30 @@ function Toasts() {
 
 export default function App() {
   const sidebarWidth = useWorkspace((state) => state.sidebarWidth);
+  const sidebarHidden = useWorkspace((state) => state.sidebarHidden);
   const toolsOpen = useUi((state) => state.toolsOpen);
   useShortcuts();
-  useThemeSync();
+  useAppearance();
 
+  // The frame (sidebar, toolbar, tools) sits on native glass; the workbench stays opaque for legibility and speed.
   return (
-    <div className="flex h-full flex-col">
-      <TitleBar />
-      <div className="flex min-h-0 flex-1">
-        <div className="shrink-0 border-r border-line" style={{ width: sidebarWidth }}>
-          <Sidebar />
+    <div className="flex h-full">
+      {!sidebarHidden && (
+        <>
+          <div className="shrink-0" style={{ width: sidebarWidth }}>
+            <Sidebar />
+          </div>
+          <Splitter direction="horizontal" onDrag={(x) => useWorkspace.getState().setSidebarWidth(x)} onReset={() => useWorkspace.getState().setSidebarWidth(272)} />
+        </>
+      )}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Toolbar />
+        <div className="flex min-h-0 flex-1">
+          <main className="flex min-w-0 flex-1 flex-col bg-bg">
+            <Workbench />
+          </main>
+          {toolsOpen && <ToolsPanel />}
         </div>
-        <Splitter direction="horizontal" onDrag={(x) => useWorkspace.getState().setSidebarWidth(x)} onReset={() => useWorkspace.getState().setSidebarWidth(272)} />
-        <main className="flex min-w-0 flex-1 flex-col bg-bg">
-          <TabBar />
-          <Workbench />
-        </main>
-        {toolsOpen && <ToolsPanel />}
       </div>
       <DialogHost />
       <Toasts />

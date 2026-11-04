@@ -37,7 +37,9 @@ const browserBridge: GetmanBridge = {
       input.onchange = async () => resolve(input.files?.[0] ? await input.files[0].text() : null);
       input.click();
     }),
-  setTitleBarColors: () => undefined,
+  initialAppearance: null,
+  setAppearance: async () => ({ translucent: false, supported: false, reducedTransparency: false, accent: null }),
+  onAppearanceChanged: () => () => undefined,
   onMenuCommand: () => () => undefined
 };
 

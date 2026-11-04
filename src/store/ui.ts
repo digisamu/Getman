@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import { create } from "zustand";
+import type { AppearanceState } from "../shared/ipc";
 
 export type Dialog =
   | { kind: "save"; tabId: string; closeAfter?: boolean }
@@ -14,6 +15,8 @@ type UiStore = {
   toolsOpen: boolean;
   sidebarView: "collections" | "history";
   toasts: Toast[];
+  appearance: AppearanceState | null;
+  setAppearance: (appearance: AppearanceState | null) => void;
   openDialog: (dialog: Dialog) => void;
   closeDialog: () => void;
   setToolsOpen: (open: boolean) => void;
@@ -26,6 +29,8 @@ export const useUi = create<UiStore>()((set) => ({
   toolsOpen: false,
   sidebarView: "collections",
   toasts: [],
+  appearance: null,
+  setAppearance: (appearance) => set({ appearance }),
   openDialog: (dialog) => set({ dialog }),
   closeDialog: () => set({ dialog: null }),
   setToolsOpen: (toolsOpen) => set({ toolsOpen }),

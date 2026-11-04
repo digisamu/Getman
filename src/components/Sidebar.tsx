@@ -1,6 +1,7 @@
-import { ChevronRight, Copy, Download, Folder, FolderPlus, MoreHorizontal, Pencil, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import { ChevronRight, Copy, Download, Folder, FolderPlus, MoreHorizontal, PanelLeft, Pencil, Plus, Search, Trash2, Upload, X } from "lucide-react";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
-import { bridge } from "../lib/bridge";
+import iconUrl from "../assets/logo.png";
+import { bridge, isDesktop, isMac } from "../lib/bridge";
 import { cloneRequest } from "../lib/factory";
 import { dayLabel, relativeTime, statusTone } from "../lib/format";
 import { exportCollection, importCollection } from "../lib/postman";
@@ -30,8 +31,16 @@ export function Sidebar() {
   const addMenu = usePopover();
 
   return (
-    <aside className="sidebar flex h-full min-w-0 flex-col bg-sidebar">
-      <div className="flex h-11 shrink-0 items-center justify-between gap-2 px-3">
+    <aside className="sidebar chrome flex h-full min-w-0 flex-col">
+      {/* Full-height sidebar: the macOS traffic lights sit in this row, as in Finder or Notes. */}
+      <div className="sidebar-header drag flex h-[52px] shrink-0 items-center gap-2 pr-2" style={{ paddingLeft: isDesktop && isMac ? 84 : 14 }}>
+        <img src={iconUrl} alt="" className="h-5 w-5 object-contain" draggable={false} />
+        <span className="wordmark text-[15px] leading-none">Getman</span>
+        <button className="no-drag icon-btn ml-auto" onClick={() => useWorkspace.getState().toggleSidebar()} title={`Hide sidebar (${isMac ? "⌃⌘S" : "Ctrl+B"})`}>
+          <PanelLeft size={16} />
+        </button>
+      </div>
+      <div className="flex h-9 shrink-0 items-center justify-between gap-2 px-3">
         <div className="seg">
           <button className="seg-item" data-active={view === "collections"} onClick={() => setView("collections")}>
             Collections

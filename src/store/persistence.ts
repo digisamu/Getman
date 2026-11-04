@@ -14,6 +14,7 @@ const PERSISTED_KEYS = [
   "activeTabId",
   "settings",
   "sidebarWidth",
+  "sidebarHidden",
   "splitRatio"
 ] as const satisfies ReadonlyArray<keyof WorkspaceState>;
 

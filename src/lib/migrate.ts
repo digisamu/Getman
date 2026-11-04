@@ -8,7 +8,7 @@ import type { ApiRequest, BodyType, Collection, Environment, HistoryEntry, KeyVa
 
 type Loose = Record<string, any>;
 
-const THEMES: Theme[] = ["postman", "dark", "light", "sydney"];
+const THEMES: Theme[] = ["system", "postman", "dark", "light", "sydney"];
 const BODY_TYPES: BodyType[] = ["none", "json", "raw", "form-data", "urlencoded"];
 
 const str = (value: unknown, fallback = "") => (typeof value === "string" ? value : fallback);
@@ -118,9 +118,11 @@ export function normalizeWorkspace(input: unknown): Workspace {
       timeoutMs: Number.isFinite(settings.timeoutMs) && settings.timeoutMs >= 0 ? settings.timeoutMs : DEFAULT_SETTINGS.timeoutMs,
       verifySsl: settings.verifySsl !== false,
       followRedirects: settings.followRedirects !== false,
-      layout: settings.layout === "vertical" ? "vertical" : "horizontal"
+      layout: settings.layout === "vertical" ? "vertical" : "horizontal",
+      translucency: typeof settings.translucency === "boolean" ? settings.translucency : DEFAULT_SETTINGS.translucency
     },
     sidebarWidth: Number.isFinite(raw.sidebarWidth) ? Math.min(480, Math.max(200, raw.sidebarWidth)) : 272,
+    sidebarHidden: raw.sidebarHidden === true,
     splitRatio: Number.isFinite(raw.splitRatio) ? Math.min(0.8, Math.max(0.2, raw.splitRatio)) : 0.5
   };
 }

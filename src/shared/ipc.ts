@@ -50,7 +50,25 @@ export type OpenFileOptions = {
   extensions: string[];
 };
 
-export type MenuCommand = "new-tab" | "close-tab" | "save" | "save-as" | "import" | "settings";
+export type MenuCommand = "new-tab" | "close-tab" | "save" | "save-as" | "import" | "settings" | "toggle-sidebar";
+
+export type AppearanceRequest = {
+  /** Which system appearance native UI (menus, dialogs, the glass material) should use. */
+  mode: "system" | "light" | "dark";
+  translucency: boolean;
+  /** Opaque window colour, used behind the window and for the Windows caption buttons. */
+  background: string;
+  symbols: string;
+};
+
+export type AppearanceState = {
+  /** Whether glass is actually on: requested, supported by the OS, and not disabled by "Reduce transparency". */
+  translucent: boolean;
+  supported: boolean;
+  reducedTransparency: boolean;
+  /** The system accent colour as #rrggbb, when the OS provides one. */
+  accent: string | null;
+};
 
 export type GetmanBridge = {
   platform: string;
@@ -61,6 +79,9 @@ export type GetmanBridge = {
   cancelRequest: (id: string) => void;
   saveFile: (options: SaveFileOptions) => Promise<boolean>;
   openFile: (options: OpenFileOptions) => Promise<string | null>;
-  setTitleBarColors: (background: string, symbols: string) => void;
+  /** Appearance the main process applied before the first paint, so the window never flashes. */
+  initialAppearance: AppearanceState | null;
+  setAppearance: (request: AppearanceRequest) => Promise<AppearanceState>;
+  onAppearanceChanged: (listener: () => void) => () => void;
   onMenuCommand: (listener: (command: MenuCommand) => void) => () => void;
 };

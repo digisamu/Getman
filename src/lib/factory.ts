@@ -3,11 +3,15 @@ import type { ApiRequest, Collection, Environment, HttpMethod, KeyValueRow, Requ
 
 export const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 
+// Glass is on by default on macOS. On Windows it is opt-in (Settings), since Mica only exists on Windows 11.
+const isMacPlatform = typeof navigator !== "undefined" && /Mac/i.test(navigator.userAgent);
+
 export const DEFAULT_SETTINGS: Settings = {
   timeoutMs: 0,
   verifySsl: true,
   followRedirects: true,
-  layout: "horizontal"
+  layout: "horizontal",
+  translucency: isMacPlatform
 };
 
 export function createRow(key = "", value = "", enabled = true): KeyValueRow {
@@ -84,7 +88,7 @@ export function createInitialWorkspace(): Workspace {
   const tab = createTab();
   return {
     version: 2,
-    theme: "postman",
+    theme: "system",
     activeEnvironmentId: demo.id,
     environments: [demo, local],
     collections: [collection],
@@ -93,6 +97,7 @@ export function createInitialWorkspace(): Workspace {
     activeTabId: tab.id,
     settings: { ...DEFAULT_SETTINGS },
     sidebarWidth: 272,
+    sidebarHidden: false,
     splitRatio: 0.5
   };
 }

@@ -4,7 +4,7 @@ export type BodyType = "none" | "json" | "raw" | "form-data" | "urlencoded";
 
 export type AuthType = "none" | "bearer" | "basic";
 
-export type Theme = "postman" | "dark" | "light" | "sydney";
+export type Theme = "system" | "postman" | "dark" | "light" | "sydney";
 
 export type KeyValueRow = {
   id: string;
@@ -87,6 +87,8 @@ export type Settings = {
   verifySsl: boolean;
   followRedirects: boolean;
   layout: "horizontal" | "vertical";
+  /** Native glass behind the sidebar and toolbar (macOS vibrancy, Windows 11 Mica). */
+  translucency: boolean;
 };
 
 export type Workspace = {
@@ -100,6 +102,7 @@ export type Workspace = {
   activeTabId: string;
   settings: Settings;
   sidebarWidth: number;
+  sidebarHidden: boolean;
   splitRatio: number;
 };
 

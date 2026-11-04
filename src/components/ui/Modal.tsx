@@ -21,7 +21,7 @@ export function Modal({ title, onClose, children, footer, width = 460 }: Props) 
 
   return createPortal(
     <div className="fade-in fixed inset-0 z-40 grid place-items-center p-6" style={{ background: "var(--scrim)" }} onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="pop-in flex max-h-full w-full flex-col overflow-hidden rounded-lg border border-line bg-elevated shadow-pop" style={{ maxWidth: width }} role="dialog" aria-modal="true" aria-label={title}>
+      <div className="sheet pop-in flex max-h-full w-full flex-col overflow-hidden" style={{ maxWidth: width }} role="dialog" aria-modal="true" aria-label={title}>
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-line pl-5 pr-3">
           <h2 className="dialog-title text-base font-semibold">{title}</h2>
           <button className="icon-btn" onClick={onClose} aria-label="Close">

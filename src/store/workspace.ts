@@ -23,6 +23,7 @@ type Actions = {
   setTheme: (theme: Theme) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   setSidebarWidth: (width: number) => void;
+  toggleSidebar: () => void;
   setSplitRatio: (ratio: number) => void;
 
   // Tabs
@@ -102,6 +103,7 @@ export const useWorkspace = create<WorkspaceState>()((set, get) => ({
   setTheme: (theme) => set({ theme }),
   updateSettings: (patch) => set((state) => ({ settings: { ...state.settings, ...patch } })),
   setSidebarWidth: (sidebarWidth) => set({ sidebarWidth: Math.round(Math.min(480, Math.max(200, sidebarWidth))) }),
+  toggleSidebar: () => set((state) => ({ sidebarHidden: !state.sidebarHidden })),
   setSplitRatio: (splitRatio) => set({ splitRatio: Math.min(0.8, Math.max(0.2, splitRatio)) }),
 
   setActiveTab: (activeTabId) => set({ activeTabId }),
@@ -316,6 +318,7 @@ export function snapshot(state: WorkspaceState): Workspace {
     activeTabId: state.activeTabId,
     settings: state.settings,
     sidebarWidth: state.sidebarWidth,
+    sidebarHidden: state.sidebarHidden,
     splitRatio: state.splitRatio
   };
 }

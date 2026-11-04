@@ -2,6 +2,7 @@ import { Plus, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { cancelTab, useResponses } from "../store/responses";
 import { confirmAction } from "../store/ui";
+import { isMac } from "../lib/bridge";
 import { useWorkspace } from "../store/workspace";
 
 export function requestCloseTab(tabId: string) {
@@ -24,7 +25,8 @@ export function requestCloseTab(tabId: string) {
   });
 }
 
-export function TabBar() {
+/** Request tabs, shown inside the toolbar like Safari's compact tabs. */
+export function TabStrip() {
   const tabs = useWorkspace((state) => state.tabs);
   const activeTabId = useWorkspace((state) => state.activeTabId);
   const loading = useResponses((state) => state.byTab);
@@ -35,10 +37,10 @@ export function TabBar() {
   }, [activeTabId]);
 
   return (
-    <div className="flex h-9 shrink-0 items-stretch border-b border-line bg-sidebar">
+    <div className="flex min-w-0 flex-1 items-center gap-1">
       <div
         ref={strip}
-        className="flex min-w-0 items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         onWheel={(event) => {
           if (strip.current && Math.abs(event.deltaY) > Math.abs(event.deltaX)) strip.current.scrollLeft += event.deltaY;
         }}
@@ -47,15 +49,14 @@ export function TabBar() {
         {tabs.map((tab) => {
           const active = tab.id === activeTabId;
           const isLoading = loading[tab.id]?.status === "loading";
+          const unsaved = tab.dirty && tab.source !== null;
           return (
             <div
               key={tab.id}
               role="tab"
               aria-selected={active}
               data-active={active}
-              className={`group relative flex w-[180px] min-w-[120px] shrink-0 items-center gap-2 border-r border-line pl-3 pr-1.5 text-sm ${
-                active ? "bg-bg text-fg" : "text-muted hover:bg-hover hover:text-fg"
-              }`}
+              className="tab no-drag group"
               onMouseDown={(event) => {
                 if (event.button === 1) {
                   event.preventDefault();
@@ -65,36 +66,32 @@ export function TabBar() {
               onClick={() => useWorkspace.getState().setActiveTab(tab.id)}
               title={tab.request.url || tab.request.name}
             >
-              {active && <span className="absolute inset-x-0 top-0 h-0.5 bg-accent" />}
-              {active && <span className="absolute inset-x-0 -bottom-px h-px bg-bg" />}
               <span className={`method method-${tab.request.method} shrink-0 text-[10px]`}>{tab.request.method === "DELETE" ? "DEL" : tab.request.method === "OPTIONS" ? "OPT" : tab.request.method}</span>
               <span className={`min-w-0 flex-1 truncate ${tab.source ? "" : "italic"}`}>{tab.request.name}</span>
-              <span className="relative grid h-5 w-5 shrink-0 place-items-center">
+              <span className="relative grid h-[18px] w-[18px] shrink-0 place-items-center">
                 {isLoading ? (
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
                 ) : (
-                  tab.dirty && tab.source && <span className="h-2 w-2 rounded-full bg-muted group-hover:hidden" />
+                  unsaved && <span className="h-1.5 w-1.5 rounded-full bg-muted group-hover:hidden" />
                 )}
                 <button
-                  className={`icon-btn absolute inset-0 h-5 w-5 ${active ? "" : "opacity-0"} ${tab.dirty && tab.source && !isLoading ? "opacity-0" : ""} group-hover:opacity-100`}
+                  className={`tab-close ${active && !unsaved && !isLoading ? "" : "opacity-0"} group-hover:opacity-100`}
                   onClick={(event) => {
                     event.stopPropagation();
                     requestCloseTab(tab.id);
                   }}
                   aria-label={`Close ${tab.request.name}`}
                 >
-                  <X size={13} />
+                  <X size={11} strokeWidth={2.5} />
                 </button>
               </span>
             </div>
           );
         })}
       </div>
-      <button className="grid w-9 shrink-0 place-items-center text-muted hover:bg-hover hover:text-fg" onClick={() => useWorkspace.getState().openNewTab()} title="New request">
-        <Plus size={15} />
+      <button className="no-drag icon-btn shrink-0" onClick={() => useWorkspace.getState().openNewTab()} title={`New request (${isMac ? "⌘T" : "Ctrl+T"})`}>
+        <Plus size={16} />
       </button>
-      <div className="flex-1" onDoubleClick={() => useWorkspace.getState().openNewTab()} />
     </div>
   );
 }
-

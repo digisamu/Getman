@@ -65,4 +65,10 @@ The URL is the single source of truth for enabled query parameters; `lib/url.ts`
 
 ## Theming
 
-All colours come from CSS variables defined per theme in `src/styles.css` and mapped into Tailwind (`tailwind.config.js`). Fonts are bundled locally with Fontsource: IBM Plex Sans for the interface, JetBrains Mono for code, and Bodoni Moda for the Sydney theme's display type.
+All colours come from CSS variables defined per theme in `src/styles.css` and mapped into Tailwind (`tailwind.config.js`). The interface uses system fonts (SF Pro and SF Mono on macOS, Segoe UI Variable and Cascadia Mono on Windows), so nothing is downloaded before the first paint; only the Sydney wordmark bundles a face (Bodoni Moda).
+
+### Glass
+
+The window frame (sidebar, toolbar, tools panel) sits on a native material: `vibrancy: "sidebar"` on macOS and Mica on Windows 11 22H2+. The operating system's compositor draws it, so it costs almost nothing. The workbench stays opaque for legibility and speed. CSS `backdrop-filter` is used only on small, short-lived surfaces (menus, dialogs, toasts).
+
+The renderer asks for an appearance (`window:appearance`) with the theme's light/dark mode and the Glass effects setting. The main process applies `nativeTheme.themeSource` and the material, and returns what is really in effect: glass is off when unsupported or when the user has turned on Reduce transparency. That decides `data-translucent` on `<html>`. The state for the first paint arrives through the preload (`initialAppearance`), so the window never flashes. Changes to the accent colour or to Reduce transparency are pushed back with `appearance:changed`.

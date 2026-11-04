@@ -18,7 +18,7 @@ export function ToolsPanel() {
   const close = () => useUi.getState().setToolsOpen(false);
 
   return (
-    <aside className="flex h-full w-[380px] shrink-0 flex-col border-l border-line bg-sidebar">
+    <aside className="chrome flex h-full w-[360px] shrink-0 flex-col border-l border-line">
       <div className="flex h-11 shrink-0 items-center justify-between border-b border-line pl-4 pr-2">
         <span className="text-sm font-semibold">Developer tools</span>
         <button className="icon-btn" onClick={close} aria-label="Close tools">
