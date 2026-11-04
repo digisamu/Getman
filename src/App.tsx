@@ -108,6 +108,10 @@ function useAppearance() {
     };
   }, [theme, translucency]);
 
+  // While the window is dragged the native glass is swapped for a solid frame (see main.ts).
+  useEffect(() => bridge.onDraggingChanged((dragging) => (document.documentElement.dataset.dragging = String(dragging))), []);
+  useEffect(() => bridge.onFullScreenChanged((fullScreen) => (document.documentElement.dataset.fullscreen = String(fullScreen))), []);
+
   // Native apps quiet their window chrome when another app is in front.
   useEffect(() => {
     const root = document.documentElement;

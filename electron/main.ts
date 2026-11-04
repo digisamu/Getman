@@ -25,6 +25,11 @@ const distDir = path.join(__dirname, "../dist");
 // The HTTP engine (undici) is only loaded when the first request is sent, keeping startup lean.
 let httpEngine: typeof import("./http") | null = null;
 const http = () => (httpEngine ??= require("./http.cjs") as typeof import("./http"));
+// Same for the updater, which is only needed when the user checks for updates.
+let updaterModule: typeof import("./updater") | null = null;
+const updater = () => (updaterModule ??= require("./updater.cjs") as typeof import("./updater"));
+
+const failure = (error: unknown) => ({ ok: false as const, error: error instanceof Error ? error.message : String(error) });
 
 const workspaceFile = () => path.join(app.getPath("userData"), "workspace.json");
 // Workspaces written by the old Tauri build live under the bundle identifier.
@@ -33,9 +38,9 @@ const legacyWorkspaceFile = () => path.join(app.getPath("appData"), "com.getman.
 // Opaque window colours per theme, painted before the page loads.
 const THEME_BACKGROUNDS: Record<string, { light: string; dark: string }> = {
   system: { light: "#f5f5f7", dark: "#2a2a2c" },
-  postman: { light: "#212121", dark: "#212121" },
-  dark: { light: "#12161c", dark: "#12161c" },
-  light: { light: "#f7f7f8", dark: "#f7f7f8" },
+  postman: { light: "#262628", dark: "#262628" },
+  dark: { light: "#1a1e24", dark: "#1a1e24" },
+  light: { light: "#f2f2f4", dark: "#f2f2f4" },
   sydney: { light: "#f8efec", dark: "#f8efec" }
 };
 const THEME_MODES: Record<string, AppearanceRequest["mode"]> = { system: "system", postman: "dark", dark: "dark", light: "light", sydney: "light" };
@@ -107,16 +112,57 @@ function appearanceState(request: AppearanceRequest): AppearanceState {
   };
 }
 
+// What the window currently shows, so a drag can swap the glass out and back in.
+let currentAppearance: { request: AppearanceRequest; state: AppearanceState } | null = null;
+let dragging = false;
+let dragEndTimer: ReturnType<typeof setTimeout> | undefined;
+
 function applyAppearance(window: BrowserWindow, request: AppearanceRequest): AppearanceState {
   // Only assign when it changes: every assignment can emit "updated", which would loop back here.
   if (nativeTheme.themeSource !== request.mode) nativeTheme.themeSource = request.mode;
   const state = appearanceState(request);
-  // The window server draws the glass, so it costs almost nothing on the GPU, even on low-end laptops.
+  currentAppearance = { request, state };
+  if (dragging) return state;
+  // The window server draws the glass; the page itself does no blurring.
   if (isMac) window.setVibrancy(state.translucent ? "sidebar" : null);
   if (isWindows && supportsGlass) window.setBackgroundMaterial(state.translucent ? "mica" : "none");
   window.setBackgroundColor(state.translucent ? "#00000000" : request.background);
   if (!isMac) window.setTitleBarOverlay?.({ color: state.translucent ? "#00000000" : request.background, symbolColor: request.symbols, height: TOOLBAR_HEIGHT });
   return state;
+}
+
+/**
+ * While the window is dragged, macOS has to re-blur everything behind the glass on every frame, which
+ * makes the window trail the cursor. For the duration of the drag the frame turns solid (the same flat
+ * look macOS gives inactive windows) so the window moves as cheaply as an opaque one, then the glass
+ * comes back the moment it is released.
+ */
+function watchDrags(window: BrowserWindow) {
+  if (!isMac) return;
+  const start = () => {
+    if (dragging || !currentAppearance?.state.translucent) return;
+    dragging = true;
+    window.webContents.send("window:dragging", true);
+    window.setVibrancy(null);
+    window.setBackgroundColor(currentAppearance.request.background);
+  };
+  const end = () => {
+    clearTimeout(dragEndTimer);
+    if (!dragging) return;
+    dragging = false;
+    if (currentAppearance?.state.translucent) {
+      window.setBackgroundColor("#00000000");
+      window.setVibrancy("sidebar");
+    }
+    window.webContents.send("window:dragging", false);
+  };
+  window.on("will-move", start);
+  // "moved" marks the end of a drag; the timer covers moves that never report one.
+  window.on("move", () => {
+    clearTimeout(dragEndTimer);
+    dragEndTimer = setTimeout(end, 250);
+  });
+  window.on("moved", end);
 }
 
 function createWindow() {
@@ -140,7 +186,7 @@ function createWindow() {
     icon: isMac ? undefined : path.join(__dirname, isDev ? "../public/app-icon.png" : "../dist/app-icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
-      additionalArguments: [`--getman-appearance=${encodeURIComponent(JSON.stringify(initial))}`],
+      additionalArguments: [`--getman-appearance=${encodeURIComponent(JSON.stringify(initial))}`, `--getman-version=${app.getVersion()}`],
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -148,6 +194,12 @@ function createWindow() {
     }
   });
 
+  currentAppearance = { request: appearance, state: initial };
+  watchDrags(mainWindow);
+  // In full screen the traffic lights (and Windows caption buttons) are gone, so the frame drops their inset.
+  for (const [event, value] of [["enter-full-screen", true], ["leave-full-screen", false]] as const) {
+    mainWindow.on(event as "enter-full-screen", () => mainWindow?.webContents.send("window:fullscreen", value));
+  }
   mainWindow.once("ready-to-show", () => mainWindow?.show());
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -260,6 +312,22 @@ function registerIpc() {
     });
     if (result.canceled || !result.filePaths[0]) return null;
     return readFile(result.filePaths[0], "utf8");
+  });
+
+  ipcMain.handle("update:check", async () => {
+    try {
+      return { ok: true as const, info: await updater().checkForUpdates() };
+    } catch (error) {
+      return failure(error);
+    }
+  });
+  ipcMain.handle("update:install", async () => {
+    try {
+      await updater().installUpdate((progress) => mainWindow?.webContents.send("update:progress", progress));
+      return { ok: true as const };
+    } catch (error) {
+      return failure(error);
+    }
   });
 
   ipcMain.handle("window:appearance", (_event, request: AppearanceRequest) =>

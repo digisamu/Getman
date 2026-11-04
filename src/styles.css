@@ -22,8 +22,20 @@
   --material-strong: color-mix(in srgb, var(--elevated) 92%, transparent);
 }
 
-/* Without native glass the frame is simply opaque. */
-html:not([data-translucent="true"]) {
+/* Room left for the macOS traffic lights and the Windows caption buttons; full screen hides both. */
+:root {
+  --traffic-lights: 84px;
+  --caption-buttons: 150px;
+}
+
+html[data-fullscreen="true"] {
+  --traffic-lights: 0px;
+  --caption-buttons: 0px;
+}
+
+/* Without native glass (or while the window is being dragged) the frame is simply opaque. */
+html:not([data-translucent="true"]),
+html[data-dragging="true"] {
   --chrome-alpha: 100%;
 }
 
@@ -102,6 +114,7 @@ html:not([data-translucent="true"]) {
 @media (prefers-color-scheme: dark) {
   [data-theme="system"] {
     color-scheme: dark;
+    --chrome-alpha: 50%;
     --accent: var(--system-accent, #0a84ff);
     --accent-hover: color-mix(in srgb, var(--accent) 84%, white);
     --bg: #1e1e1e;
@@ -152,74 +165,76 @@ html:not([data-translucent="true"]) {
 /* Postman — dense charcoal workbench with the brand orange. */
 [data-theme="postman"] {
   color-scheme: dark;
-  --bg: #1c1c1c;
-  --sidebar: #212121;
-  --surface: #1c1c1c;
-  --field: #262626;
-  --elevated: #2b2b2b;
-  --border: #333333;
-  --border-strong: #454545;
-  --hover: rgba(255, 255, 255, 0.055);
-  --selected: rgba(255, 255, 255, 0.09);
-  --text: #ececec;
-  --text-muted: #a3a3a3;
-  --text-faint: #6f6f6f;
+  --chrome-alpha: 50%;
+  --bg: #1c1c1e;
+  --sidebar: #262628;
+  --surface: #1c1c1e;
+  --field: #232325;
+  --elevated: #2c2c2e;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --hover: rgba(255, 255, 255, 0.06);
+  --selected: rgba(255, 255, 255, 0.1);
+  --text: #f2f2f3;
+  --text-muted: #9c9ca1;
+  --text-faint: #636368;
   --accent: #ff6c37;
   --accent-hover: #ff8257;
   --accent-fg: #ffffff;
-  --accent-soft: rgba(255, 108, 55, 0.14);
+  --accent-soft: rgba(255, 108, 55, 0.15);
   --focus: rgba(255, 108, 55, 0.55);
-  --success: #3ecf8e;
-  --warning: #f0a83a;
-  --danger: #f2555a;
+  --success: #30d158;
+  --warning: #ffb340;
+  --danger: #ff5a52;
   --info: #5aa7ff;
   --m-get: #3ecf8e;
-  --m-post: #f0a83a;
+  --m-post: #ffb340;
   --m-put: #5aa7ff;
   --m-patch: #b48cff;
-  --m-delete: #f2555a;
-  --m-other: #9a9a9a;
+  --m-delete: #ff5a52;
+  --m-other: #9c9ca1;
   --syn-key: #9cdcfe;
   --syn-string: #ce9178;
   --syn-number: #b5cea8;
   --syn-bool: #569cd6;
   --syn-null: #808080;
-  --syn-punct: #8a8a8a;
+  --syn-punct: #8a8a8f;
   --syn-tag: #569cd6;
   --syn-attr: #9cdcfe;
   --syn-comment: #6a9955;
-  --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-pop: 0 12px 36px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 /* Dark — cool graphite with a clear blue accent. */
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0f1217;
-  --sidebar: #12161c;
-  --surface: #0f1217;
-  --field: #171c23;
-  --elevated: #1b212a;
-  --border: #242b35;
-  --border-strong: #323b47;
-  --hover: rgba(160, 190, 230, 0.06);
-  --selected: rgba(160, 190, 230, 0.11);
-  --text: #e6ebf2;
-  --text-muted: #94a0b0;
-  --text-faint: #5e6978;
+  --chrome-alpha: 48%;
+  --bg: #111418;
+  --sidebar: #1a1e24;
+  --surface: #111418;
+  --field: #171b21;
+  --elevated: #20252c;
+  --border: rgba(170, 195, 235, 0.1);
+  --border-strong: rgba(170, 195, 235, 0.18);
+  --hover: rgba(170, 195, 235, 0.06);
+  --selected: rgba(170, 195, 235, 0.11);
+  --text: #eaeef4;
+  --text-muted: #98a2b1;
+  --text-faint: #5f6977;
   --accent: #4c8dff;
   --accent-hover: #6aa1ff;
   --accent-fg: #ffffff;
-  --accent-soft: rgba(76, 141, 255, 0.15);
+  --accent-soft: rgba(76, 141, 255, 0.16);
   --focus: rgba(76, 141, 255, 0.6);
-  --success: #3fbf8a;
-  --warning: #e5a442;
-  --danger: #ef5d68;
+  --success: #3fd08f;
+  --warning: #f0b04a;
+  --danger: #ff5c68;
   --info: #4c8dff;
-  --m-get: #3fbf8a;
-  --m-post: #e5a442;
-  --m-put: #4c8dff;
+  --m-get: #3fd08f;
+  --m-post: #f0b04a;
+  --m-put: #5c9bff;
   --m-patch: #a78bfa;
-  --m-delete: #ef5d68;
+  --m-delete: #ff5c68;
   --m-other: #8b96a5;
   --syn-key: #7cc4ff;
   --syn-string: #9fd88a;
@@ -229,40 +244,41 @@ html:not([data-translucent="true"]) {
   --syn-punct: #7a8594;
   --syn-tag: #7cc4ff;
   --syn-attr: #f5b971;
-  --syn-comment: #5e6978;
-  --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(160, 190, 230, 0.08);
+  --syn-comment: #5f6977;
+  --shadow-pop: 0 12px 36px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 /* Light — bright, neutral, crisp. */
 [data-theme="light"] {
   color-scheme: light;
+  --chrome-alpha: 58%;
   --bg: #ffffff;
-  --sidebar: #f5f5f6;
+  --sidebar: #f2f2f4;
   --surface: #ffffff;
   --field: #ffffff;
-  --elevated: #ffffff;
-  --border: #e4e5e8;
-  --border-strong: #cfd1d6;
-  --hover: rgba(20, 24, 32, 0.045);
-  --selected: rgba(20, 24, 32, 0.075);
-  --text: #17191e;
-  --text-muted: #5c626d;
-  --text-faint: #979ca5;
+  --elevated: #f6f6f8;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.2);
+  --hover: rgba(0, 0, 0, 0.05);
+  --selected: rgba(0, 0, 0, 0.08);
+  --text: #1d1d1f;
+  --text-muted: #6e6e73;
+  --text-faint: #a1a1a6;
   --accent: #e2531c;
   --accent-hover: #c94512;
   --accent-fg: #ffffff;
   --accent-soft: #fdeee7;
   --focus: rgba(226, 83, 28, 0.45);
-  --success: #12875a;
-  --warning: #b86e00;
-  --danger: #d1343e;
-  --info: #2563d8;
-  --m-get: #12875a;
-  --m-post: #b86e00;
-  --m-put: #2563d8;
-  --m-patch: #7c4dd8;
-  --m-delete: #d1343e;
-  --m-other: #6b717c;
+  --success: #248a3d;
+  --warning: #b25000;
+  --danger: #d70015;
+  --info: #0062cc;
+  --m-get: #248a3d;
+  --m-post: #b25000;
+  --m-put: #0062cc;
+  --m-patch: #8944ab;
+  --m-delete: #d70015;
+  --m-other: #6e6e73;
   --syn-key: #0b5cad;
   --syn-string: #a5361a;
   --syn-number: #0f7a4f;
@@ -272,7 +288,7 @@ html:not([data-translucent="true"]) {
   --syn-tag: #0b5cad;
   --syn-attr: #a5361a;
   --syn-comment: #8a8f98;
-  --shadow-pop: 0 10px 30px rgba(20, 24, 32, 0.12), 0 0 0 1px rgba(20, 24, 32, 0.06);
+  --shadow-pop: 0 10px 34px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 /* Sydney — soft glam: porcelain and blush, lipstick rose, baby blue, champagne hairlines,
@@ -288,8 +304,8 @@ html:not([data-translucent="true"]) {
   --surface: #fdf9f7;
   --field: #ffffff;
   --elevated: #fffafa;
-  --border: #eedcd8;
-  --border-strong: #dfc2bd;
+  --border: rgba(160, 70, 100, 0.14);
+  --border-strong: rgba(160, 70, 100, 0.26);
   --hover: rgba(194, 65, 107, 0.06);
   --selected: rgba(194, 65, 107, 0.1);
   --text: #2f2236;

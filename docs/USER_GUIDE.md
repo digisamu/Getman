@@ -85,6 +85,16 @@ The wrench opens a side panel with a JWT decoder (shows expiry), Base64 encode/d
 - **Response position**: beside or below the request
 - **Glass effects**: the translucent sidebar and toolbar. On by default on macOS. On Windows 11 you can turn it on to use the Mica material. Turns off automatically when Reduce transparency is on in your system settings.
 
+## Updates
+
+Getman looks for a new version a few seconds after it starts (turn this off with **Check for updates automatically** in Settings). When one is available, a dot appears on the Settings button.
+
+Open **Settings** and press **Update to …**. Getman downloads the new version, checks it, installs it and restarts. Your requests, collections and settings are kept.
+
+- **Mac:** Getman must be in your Applications folder (or another folder you can write to). If it is running from the disk image, move it to Applications first.
+- **Windows:** the installer runs silently and Getman reopens when it is done.
+- **Linux:** AppImages update themselves. If you installed the `.deb`, the button opens the download page instead.
+
 ## Privacy
 
 Getman has no accounts, cloud sync, telemetry or analytics. The only network traffic is the requests you send.

@@ -36,6 +36,12 @@ The body is checked as you type. Variables are allowed anywhere, including unquo
 
 Getman copies the old Tauri workspace (`com.getman.desktop/workspace.json` in the app-data folder) only when the new workspace file does not exist yet. If a new, empty workspace was created first, quit Getman, delete the new `workspace.json` (see the paths in the README) and start Getman again.
 
+## Update says it can't install
+
+- *Move Getman to your Applications folder*: macOS runs apps opened straight from Downloads or the disk image from a read-only location. Drag Getman into Applications and open it from there.
+- *Getman can't write to …*: the folder Getman is in is not writable by your user. Use **Download** to get the new version by hand, or run the Terminal install command from the README.
+- *GitHub is rate-limiting update checks*: GitHub allows 60 anonymous checks an hour per network. Wait a few minutes.
+
 ## Starting over
 
 Quit Getman and delete `workspace.json`. A new workspace with sample requests is created on the next launch.

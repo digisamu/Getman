@@ -21,22 +21,22 @@ No account, no cloud, no telemetry. Your requests stay on your computer.
 
 | Your computer | Download |
 | --- | --- |
-| Mac with Apple chip (M1, M2, M3, M4) | [Getman-mac-arm64.dmg](https://github.com/digisamu/Getman-Postman-Clone/releases/latest/download/Getman-mac-arm64.dmg) |
-| Mac with Intel chip | [Getman-mac-x64.dmg](https://github.com/digisamu/Getman-Postman-Clone/releases/latest/download/Getman-mac-x64.dmg) |
-| Windows 10 or 11 | [Getman-windows-setup.exe](https://github.com/digisamu/Getman-Postman-Clone/releases/latest/download/Getman-windows-setup.exe) |
-| Linux (any distro) | [Getman-linux.AppImage](https://github.com/digisamu/Getman-Postman-Clone/releases/latest/download/Getman-linux.AppImage) |
-| Linux (Debian, Ubuntu) | [Getman-linux.deb](https://github.com/digisamu/Getman-Postman-Clone/releases/latest/download/Getman-linux.deb) |
+| Mac with Apple chip (M1, M2, M3, M4) | [Getman-mac-arm64.dmg](https://github.com/digisamu/Getman/releases/latest/download/Getman-mac-arm64.dmg) |
+| Mac with Intel chip | [Getman-mac-x64.dmg](https://github.com/digisamu/Getman/releases/latest/download/Getman-mac-x64.dmg) |
+| Windows 10 or 11 | [Getman-windows-setup.exe](https://github.com/digisamu/Getman/releases/latest/download/Getman-windows-setup.exe) |
+| Linux (any distro) | [Getman-linux.AppImage](https://github.com/digisamu/Getman/releases/latest/download/Getman-linux.AppImage) |
+| Linux (Debian, Ubuntu) | [Getman-linux.deb](https://github.com/digisamu/Getman/releases/latest/download/Getman-linux.deb) |
 
 Not sure which Mac you have? Open the Apple menu → **About This Mac** and look at **Chip**.
 
-All files are also on the [Releases page](https://github.com/digisamu/Getman-Postman-Clone/releases/latest).
+All files are also on the [Releases page](https://github.com/digisamu/Getman/releases/latest).
 
 ### Install or update from the Terminal (Mac)
 
 Run this to install Getman, or to update it to the newest version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/digisamu/Getman-Postman-Clone/main/scripts/install-macos.sh | bash
+curl -fsSL https://raw.githubusercontent.com/digisamu/Getman/main/scripts/install-macos.sh | bash
 ```
 
 It picks the right build for your Mac, closes Getman if it's open, replaces the app in **Applications**, and keeps your requests and settings. Installed this way, Getman opens without the security prompt described below.
@@ -63,7 +63,9 @@ Getman isn't signed with a paid Apple or Microsoft certificate yet, so your comp
 
 **Handy tools.** JWT decoder, Base64, JSON formatter, UUID generator and timestamp converter, all offline.
 
-**Feels like a Mac app.** A full-height glass sidebar and toolbar drawn by macOS itself (Mica on Windows 11), your system accent colour, system fonts, and native scrollbars. The glass costs no measurable speed, and it turns off automatically when **Reduce transparency** is on.
+**Feels like a Mac app.** A full-height glass sidebar and toolbar drawn by macOS itself (Mica on Windows 11), your system accent colour, system fonts, and native scrollbars. It turns off automatically when **Reduce transparency** is on, and while you drag the window the frame turns solid for a moment so moving stays smooth.
+
+**Updates in one click.** Getman checks for a new version when it starts. Open **Settings** and press **Update**; it downloads, installs and restarts by itself.
 
 **Five themes.** System (follows light and dark mode), Postman, Dark, Light, and Sydney:
 

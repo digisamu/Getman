@@ -40,7 +40,13 @@ const browserBridge: GetmanBridge = {
   initialAppearance: null,
   setAppearance: async () => ({ translucent: false, supported: false, reducedTransparency: false, accent: null }),
   onAppearanceChanged: () => () => undefined,
-  onMenuCommand: () => () => undefined
+  onDraggingChanged: () => () => undefined,
+  onFullScreenChanged: () => () => undefined,
+  onMenuCommand: () => () => undefined,
+  appVersion: "dev",
+  checkForUpdates: async () => ({ ok: false, error: "Updates are available in the desktop app." }),
+  installUpdate: async () => ({ ok: false, error: "Updates are available in the desktop app." }),
+  onUpdateProgress: () => () => undefined
 };
 
 export const bridge: GetmanBridge = window.getman ?? browserBridge;

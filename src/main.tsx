@@ -6,6 +6,7 @@ import App, { applyAppearanceState } from "./App";
 import { bridge } from "./lib/bridge";
 import { preloadEditor } from "./components/CodeEditor";
 import { hydrateWorkspace } from "./store/persistence";
+import { scheduleUpdateCheck } from "./store/updates";
 import { useWorkspace } from "./store/workspace";
 import "./styles.css";
 
@@ -23,3 +24,4 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
 // Fetch the editor chunk once the first screen is up and the main thread is free.
 requestIdleCallback(preloadEditor, { timeout: 2000 });
+scheduleUpdateCheck();

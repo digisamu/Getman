@@ -50,6 +50,21 @@ export type OpenFileOptions = {
   extensions: string[];
 };
 
+export type UpdateInfo = {
+  current: string;
+  latest: string;
+  available: boolean;
+  notes: string;
+  /** Release page, for reading notes or downloading by hand. */
+  url: string;
+  publishedAt: string;
+  /** Whether this copy can download and install the update by itself. */
+  canInstall: boolean;
+  reason: string | null;
+};
+
+export type UpdateProgress = { phase: "downloading" | "installing"; received: number; total: number };
+
 export type MenuCommand = "new-tab" | "close-tab" | "save" | "save-as" | "import" | "settings" | "toggle-sidebar";
 
 export type AppearanceRequest = {
@@ -83,5 +98,13 @@ export type GetmanBridge = {
   initialAppearance: AppearanceState | null;
   setAppearance: (request: AppearanceRequest) => Promise<AppearanceState>;
   onAppearanceChanged: (listener: () => void) => () => void;
+  /** Fired when the user starts and stops dragging the window (the frame is solid in between). */
+  onDraggingChanged: (listener: (dragging: boolean) => void) => () => void;
+  /** Fired when the window enters or leaves full screen. */
+  onFullScreenChanged: (listener: (fullScreen: boolean) => void) => () => void;
   onMenuCommand: (listener: (command: MenuCommand) => void) => () => void;
+  appVersion: string;
+  checkForUpdates: () => Promise<{ ok: true; info: UpdateInfo } | { ok: false; error: string }>;
+  installUpdate: () => Promise<{ ok: true } | { ok: false; error: string }>;
+  onUpdateProgress: (listener: (progress: UpdateProgress) => void) => () => void;
 };

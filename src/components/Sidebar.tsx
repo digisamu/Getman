@@ -33,7 +33,7 @@ export function Sidebar() {
   return (
     <aside className="sidebar chrome flex h-full min-w-0 flex-col">
       {/* Full-height sidebar: the macOS traffic lights sit in this row, as in Finder or Notes. */}
-      <div className="sidebar-header drag flex h-[52px] shrink-0 items-center gap-2 pr-2" style={{ paddingLeft: isDesktop && isMac ? 84 : 14 }}>
+      <div className="sidebar-header drag flex h-[52px] shrink-0 items-center gap-2 pr-2" style={{ paddingLeft: isDesktop && isMac ? "max(14px, var(--traffic-lights))" : 14 }}>
         <img src={iconUrl} alt="" className="h-5 w-5 object-contain" draggable={false} />
         <span className="wordmark text-[15px] leading-none">Getman</span>
         <button className="no-drag icon-btn ml-auto" onClick={() => useWorkspace.getState().toggleSidebar()} title={`Hide sidebar (${isMac ? "⌃⌘S" : "Ctrl+B"})`}>

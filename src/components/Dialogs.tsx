@@ -1,6 +1,8 @@
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { Copy, Download, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { isMac } from "../lib/bridge";
+import { bridge, isDesktop, isMac } from "../lib/bridge";
+import { formatBytes } from "../lib/format";
+import { checkForUpdates, installUpdate, useUpdates } from "../store/updates";
 import { useUi, type Dialog } from "../store/ui";
 import { useWorkspace } from "../store/workspace";
 import { KeyValueTable } from "./KeyValueTable";
@@ -239,6 +241,10 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="Settings" onClose={onClose} width={480}>
       <div className="divide-y divide-line">
+        <UpdatesSection />
+        <Setting title="Check for updates automatically" description="Look for a new version shortly after Getman starts.">
+          <Toggle checked={settings.autoUpdate && isDesktop} disabled={!isDesktop} onChange={(autoUpdate) => update({ autoUpdate })} />
+        </Setting>
         <Setting title="Request timeout" description="Stop waiting after this many milliseconds. 0 waits until the server answers.">
           <input
             type="number"
@@ -273,7 +279,66 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
-function Setting({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function UpdatesSection() {
+  const state = useUpdates((store) => store.state);
+  const version = bridge.appVersion;
+  let description: React.ReactNode = "Check GitHub for a newer version.";
+  let action: React.ReactNode = (
+    <button className="btn" disabled={!isDesktop || state.status === "checking"} onClick={() => void checkForUpdates()}>
+      <RefreshCw size={13} className={state.status === "checking" ? "animate-spin" : undefined} />
+      {state.status === "checking" ? "Checking…" : "Check for updates"}
+    </button>
+  );
+
+  if (!isDesktop) description = "Updates are available in the desktop app.";
+  else if (state.status === "current") description = "You have the latest version.";
+  else if (state.status === "error") description = <span className="text-danger">{state.error}</span>;
+
+  if (state.status === "available" || (state.status === "error" && state.info?.available)) {
+    const info = state.info!;
+    description = (
+      <>
+        Version {info.latest} is available.{" "}
+        <a className="text-accent hover:underline" href={info.url} target="_blank" rel="noreferrer">
+          What's new
+        </a>
+        {!info.canInstall && info.reason && <span className="mt-1 block">{info.reason}</span>}
+        {state.status === "error" && <span className="mt-1 block text-danger">{state.error}</span>}
+      </>
+    );
+    action = (
+      <button className="btn-primary" onClick={() => void installUpdate()}>
+        <Download size={13} />
+        {info.canInstall ? `Update to ${info.latest}` : "Download"}
+      </button>
+    );
+  }
+
+  if (state.status === "installing") {
+    const { progress, info } = state;
+    const percent = progress ? Math.round((progress.received / progress.total) * 100) : 0;
+    description =
+      progress?.phase === "installing" ? (
+        "Installing… Getman will restart in a moment."
+      ) : (
+        <>
+          Downloading {info.latest}… {progress ? `${percent}% of ${formatBytes(progress.total)}` : ""}
+          <span className="mt-2 block h-1.5 w-full overflow-hidden rounded-full bg-hover">
+            <span className="block h-full rounded-full bg-accent transition-[width] duration-150" style={{ width: `${percent}%` }} />
+          </span>
+        </>
+      );
+    action = null;
+  }
+
+  return (
+    <Setting title={`Getman ${version}`} description={description}>
+      {action}
+    </Setting>
+  );
+}
+
+function Setting({ title, description, children }: { title: string; description: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-6 px-5 py-4">
       <div className="min-w-0 flex-1">

@@ -63,12 +63,22 @@ The URL is the single source of truth for enabled query parameters; `lib/url.ts`
 
 `lib/migrate.ts` normalises whatever is on disk, including the 0.1 Tauri format (single active request, params outside the URL, default `{}` JSON bodies) and partially corrupted files.
 
+## Updates
+
+`electron/updater.ts` (loaded on first use) asks the GitHub Releases API for the latest version. Getman is not signed with a paid Apple certificate, so Electron's built-in updater cannot be used; instead the updater downloads the release asset for the current platform, checks its size and SHA-256 digest, and:
+
+- **macOS:** unpacks the `.zip`, verifies the bundle's signature, and hands over to a small shell script that waits for Getman to quit, moves the old bundle aside, copies the new one into place (restoring the old one if that fails) and reopens the app.
+- **Windows:** runs the NSIS installer silently (`/S --force-run`) after Getman quits.
+- **Linux AppImage:** downloads next to the current file, renames it into place and starts it.
+
+Progress is pushed to the renderer with `update:progress`. Updates are refused when the copy cannot replace itself (development builds, a read-only location, macOS App Translocation or running from the disk image), and Settings explains why.
+
 ## Theming
 
 All colours come from CSS variables defined per theme in `src/styles.css` and mapped into Tailwind (`tailwind.config.js`). The interface uses system fonts (SF Pro and SF Mono on macOS, Segoe UI Variable and Cascadia Mono on Windows), so nothing is downloaded before the first paint; only the Sydney wordmark bundles a face (Bodoni Moda).
 
 ### Glass
 
-The window frame (sidebar, toolbar, tools panel) sits on a native material: `vibrancy: "sidebar"` on macOS and Mica on Windows 11 22H2+. The operating system's compositor draws it, so it costs almost nothing. The workbench stays opaque for legibility and speed. CSS `backdrop-filter` is used only on small, short-lived surfaces (menus, dialogs, toasts).
+The window frame (sidebar, toolbar, tools panel) sits on a native material: `vibrancy: "sidebar"` on macOS and Mica on Windows 11 22H2+. The operating system's compositor draws it, so it costs almost nothing. The workbench stays opaque for legibility and speed. While the window is being dragged (`will-move` → `moved`), the main process swaps the glass for a solid frame and tells the page (`window:dragging`), so macOS does not have to re-blur the area behind the window on every frame of the move. CSS `backdrop-filter` is used only on small, short-lived surfaces (menus, dialogs, toasts).
 
 The renderer asks for an appearance (`window:appearance`) with the theme's light/dark mode and the Glass effects setting. The main process applies `nativeTheme.themeSource` and the material, and returns what is really in effect: glass is off when unsupported or when the user has turned on Reduce transparency. That decides `data-translucent` on `<html>`. The state for the first paint arrives through the preload (`initialAppearance`), so the window never flashes. Changes to the accent colour or to Reduce transparency are pushed back with `appearance:changed`.

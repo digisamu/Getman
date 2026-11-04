@@ -2,15 +2,15 @@ import { build, context } from "esbuild";
 import { pathToFileURL } from "node:url";
 
 const options = {
-  entryPoints: { main: "electron/main.ts", preload: "electron/preload.ts", http: "electron/http.ts" },
+  entryPoints: { main: "electron/main.ts", preload: "electron/preload.ts", http: "electron/http.ts", updater: "electron/updater.ts" },
   outdir: "dist-electron",
   outExtension: { ".js": ".cjs" },
   bundle: true,
   platform: "node",
   format: "cjs",
   target: "node22",
-  // http.cjs is its own bundle so main can load it lazily.
-  external: ["electron", "./http.cjs"],
+  // http.cjs and updater.cjs are their own bundles so main can load them lazily.
+  external: ["electron", "./http.cjs", "./updater.cjs"],
   sourcemap: process.argv.includes("--watch") ? "inline" : false,
   minify: !process.argv.includes("--watch"),
   logLevel: "warning"

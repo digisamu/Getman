@@ -2,6 +2,7 @@ import { Check, ChevronDown, Layers, PanelLeft, Palette, Settings2, Wrench } fro
 import { isDesktop, isMac } from "../lib/bridge";
 import type { AppearanceRequest } from "../shared/ipc";
 import { useUi } from "../store/ui";
+import { useUpdates } from "../store/updates";
 import { useActiveEnvironment, useWorkspace } from "../store/workspace";
 import type { Theme } from "../types/api";
 import { TabStrip } from "./TabBar";
@@ -98,10 +99,11 @@ export function Toolbar() {
   const setToolsOpen = useUi((state) => state.setToolsOpen);
   const openDialog = useUi((state) => state.openDialog);
   const sidebarHidden = useWorkspace((state) => state.sidebarHidden);
+  const updateReady = useUpdates((store) => store.state.status === "available");
   // With the sidebar hidden the traffic lights sit over the toolbar; on Windows the caption buttons do.
   const style = {
-    paddingLeft: isDesktop && isMac && sidebarHidden ? 84 : 10,
-    paddingRight: isDesktop && !isMac ? 150 : 10
+    paddingLeft: isDesktop && isMac && sidebarHidden ? "max(10px, var(--traffic-lights))" : 10,
+    paddingRight: isDesktop && !isMac ? "max(10px, var(--caption-buttons))" : 10
   };
 
   return (
@@ -118,8 +120,9 @@ export function Toolbar() {
         <button className={`icon-btn ${toolsOpen ? "bg-selected text-fg" : ""}`} onClick={() => setToolsOpen(!toolsOpen)} title="Developer tools" aria-pressed={toolsOpen}>
           <Wrench size={15} />
         </button>
-        <button className="icon-btn" onClick={() => openDialog({ kind: "settings" })} title="Settings">
+        <button className="icon-btn relative" onClick={() => openDialog({ kind: "settings" })} title={updateReady ? "Settings — an update is available" : "Settings"}>
           <Settings2 size={15} />
+          {updateReady && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-accent ring-2 ring-[var(--sidebar)]" />}
         </button>
       </div>
     </header>

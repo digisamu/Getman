@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { AppearanceState, GetmanBridge, MenuCommand } from "../src/shared/ipc";
+import type { AppearanceState, GetmanBridge, MenuCommand, UpdateProgress } from "../src/shared/ipc";
 
 const APPEARANCE_ARG = "--getman-appearance=";
 
@@ -29,6 +29,24 @@ const bridge: GetmanBridge = {
     const handler = () => listener();
     ipcRenderer.on("appearance:changed", handler);
     return () => ipcRenderer.removeListener("appearance:changed", handler);
+  },
+  onDraggingChanged: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, dragging: boolean) => listener(dragging);
+    ipcRenderer.on("window:dragging", handler);
+    return () => ipcRenderer.removeListener("window:dragging", handler);
+  },
+  onFullScreenChanged: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, fullScreen: boolean) => listener(fullScreen);
+    ipcRenderer.on("window:fullscreen", handler);
+    return () => ipcRenderer.removeListener("window:fullscreen", handler);
+  },
+  appVersion: process.argv.find((item) => item.startsWith("--getman-version="))?.slice("--getman-version=".length) ?? "",
+  checkForUpdates: () => ipcRenderer.invoke("update:check"),
+  installUpdate: () => ipcRenderer.invoke("update:install"),
+  onUpdateProgress: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, progress: UpdateProgress) => listener(progress);
+    ipcRenderer.on("update:progress", handler);
+    return () => ipcRenderer.removeListener("update:progress", handler);
   },
   onMenuCommand: (listener) => {
     const handler = (_event: Electron.IpcRendererEvent, command: MenuCommand) => listener(command);

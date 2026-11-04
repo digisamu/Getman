@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Installs or updates Getman on macOS from the latest GitHub release.
 #
-#   curl -fsSL https://raw.githubusercontent.com/digisamu/Getman-Postman-Clone/main/scripts/install-macos.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/digisamu/Getman/main/scripts/install-macos.sh | bash
 #
 # Set GETMAN_INSTALL_DIR to install somewhere other than /Applications.
 set -euo pipefail
 
-REPO="digisamu/Getman-Postman-Clone"
+REPO="digisamu/Getman"
 INSTALL_DIR="${GETMAN_INSTALL_DIR:-/Applications}"
 APP="$INSTALL_DIR/Getman.app"
 

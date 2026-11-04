@@ -119,7 +119,8 @@ export function normalizeWorkspace(input: unknown): Workspace {
       verifySsl: settings.verifySsl !== false,
       followRedirects: settings.followRedirects !== false,
       layout: settings.layout === "vertical" ? "vertical" : "horizontal",
-      translucency: typeof settings.translucency === "boolean" ? settings.translucency : DEFAULT_SETTINGS.translucency
+      translucency: typeof settings.translucency === "boolean" ? settings.translucency : DEFAULT_SETTINGS.translucency,
+      autoUpdate: settings.autoUpdate !== false
     },
     sidebarWidth: Number.isFinite(raw.sidebarWidth) ? Math.min(480, Math.max(200, raw.sidebarWidth)) : 272,
     sidebarHidden: raw.sidebarHidden === true,

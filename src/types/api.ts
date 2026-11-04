@@ -89,6 +89,8 @@ export type Settings = {
   layout: "horizontal" | "vertical";
   /** Native glass behind the sidebar and toolbar (macOS vibrancy, Windows 11 Mica). */
   translucency: boolean;
+  /** Look for a new version on GitHub shortly after launch. */
+  autoUpdate: boolean;
 };
 
 export type Workspace = {

@@ -1,7 +1,7 @@
 {
   "name": "getman",
   "productName": "Getman",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Offline-first desktop API client",
   "author": {
     "name": "Getman",
@@ -155,5 +155,5 @@
     "vitest": "^3.2.7",
     "zustand": "^5.0.16"
   },
-  "homepage": "https://github.com/digisamu/Getman-Postman-Clone"
+  "homepage": "https://github.com/digisamu/Getman"
 }

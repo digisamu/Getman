@@ -11,7 +11,8 @@ export const DEFAULT_SETTINGS: Settings = {
   verifySsl: true,
   followRedirects: true,
   layout: "horizontal",
-  translucency: isMacPlatform
+  translucency: isMacPlatform,
+  autoUpdate: true
 };
 
 export function createRow(key = "", value = "", enabled = true): KeyValueRow {
