@@ -1,7 +1,7 @@
 {
   "name": "getman",
   "productName": "Getman",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Offline-first desktop API client",
   "author": {
     "name": "Getman",
